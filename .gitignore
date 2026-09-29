@@ -14,7 +14,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+/lib/
 lib64/
 parts/
 sdist/
@@ -216,3 +216,16 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Prism local runtime and frontend
+/data/
+node_modules/
+/web/node_modules
+.next/
+out/
+*.tsbuildinfo
+.env.*
+!.env.example
+.DS_Store
+playwright-report/
+test-results/
