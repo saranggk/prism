@@ -10,22 +10,27 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from prism.config import get_settings
 from prism.db import engine
+from prism.uploads import UploadGuard, reconcile_uploads
+from prism.uploads import router as uploads_router
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    reconcile_uploads()
     yield
     engine.dispose()
 
 
 app = FastAPI(title="Prism API", version="0.1.0", lifespan=lifespan)
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=["127.0.0.1", "localhost", "testserver"])
+app.add_middleware(UploadGuard)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[get_settings().frontend_origin],
     allow_methods=["GET", "POST"],
     allow_headers=["Content-Type", "X-Prism-Request"],
 )
+app.include_router(uploads_router)
 
 
 class Health(BaseModel):
