@@ -14,5 +14,6 @@ class Video(BaseModel):
     status: Literal["queued", "processing", "ready", "failed"]
     current_step: str | None
     error: str | None
+    transcript_state: Literal["present", "none"] | None = None
     created_at: datetime
     updated_at: datetime

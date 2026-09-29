@@ -4,6 +4,7 @@ export type Video = {
   duration_seconds: number;
   status: "queued" | "processing" | "ready" | "failed";
   current_step: string | null;
+  transcript_state: "present" | "none" | null;
   error: string | null;
   created_at: string;
   updated_at: string;

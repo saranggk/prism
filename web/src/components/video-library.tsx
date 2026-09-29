@@ -15,7 +15,7 @@ function duration(seconds: number): string {
 function statusText(video: Video): string {
   if (video.status === "queued") return "Queued — you can leave this page";
   if (video.status === "processing") return video.current_step ?? "Preparing video";
-  if (video.status === "ready") return "Ready";
+  if (video.status === "ready") return video.transcript_state === "none" ? "Ready — no transcript" : "Ready";
   return "Failed";
 }
 

@@ -13,7 +13,10 @@ from prism.config import get_settings
 from prism.models import Video
 
 ENTRYPOINT = "process_video"
-VIDEO_COLUMNS = "id, title, duration_seconds, status, current_step, error, created_at, updated_at"
+VIDEO_COLUMNS = (
+    "id, title, duration_seconds, status, current_step, error, "
+    "transcript_state, created_at, updated_at"
+)
 
 
 def connect() -> psycopg.Connection:
@@ -72,7 +75,7 @@ def retry_video(video_id: UUID) -> Video:
             raise HTTPException(status_code=409, detail="A job for this video is already active.")
         db.execute(
             "UPDATE videos SET status = 'queued', current_step = NULL, error = NULL, "
-            "job_id = %s, updated_at = now() WHERE id = %s",
+            "job_id = %s, interrupted_attempts = 0, updated_at = now() WHERE id = %s",
             (job_id, video_id),
         )
         result = db.execute(
