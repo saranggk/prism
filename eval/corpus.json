@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "purpose": "Small local transcript-search evaluation corpus; media files are not committed.",
+  "license_note": "CS50 course media is CC BY-NC-SA 4.0. Credit CS50/Harvard, link the applicable course license, and identify the edits below. The license applies to the media, not Prism's source code.",
+  "videos": [
+    {
+      "id": "sql_connection",
+      "title": "CS50 SQL lecture: Python database connection",
+      "local_path": "data/eval/media/cs50-sql-connection.mp4",
+      "source_page": "https://cs50.harvard.edu/x/2024/weeks/7/",
+      "source_media": "https://cdn.cs50.net/2024/fall/lectures/7/lecture7-720p.mp4",
+      "source_captions": "https://cdn.cs50.net/2024/fall/lectures/7/lang/en/lecture7.srt",
+      "license": "CC BY-NC-SA 4.0",
+      "license_url": "https://cs50.harvard.edu/x/2024/license/",
+      "attribution": "CS50, Harvard University; lecture by David J. Malan",
+      "acquisition": "Remote-seeked the official 720p MP4 to 02:17:30 and saved a five-minute excerpt.",
+      "changes": "Excerpted, transcoded to browser-compatible H.264/yuv420p and AAC, and removed a timecode data stream. Official captions were used for manual labels but are not embedded in this file.",
+      "source_offset_seconds": 8250,
+      "duration_seconds": 300.042,
+      "sha256": "cc53b4ae1c3ec1bf39a5c5f33e336832159abe04f49486a37e78fe3f7de87a0e"
+    },
+    {
+      "id": "css",
+      "title": "CS50 short: CSS",
+      "local_path": "data/eval/media/cs50-css-captioned.mp4",
+      "source_page": "https://cs50.harvard.edu/x/2025/shorts/css/",
+      "source_media": "https://cdn.cs50.net/2017/fall/shorts/css/css-720p.mp4",
+      "source_captions": "https://cdn.cs50.net/2017/fall/shorts/css/lang/en/css.srt",
+      "license": "CC BY-NC-SA 4.0",
+      "license_url": "https://cs50.harvard.edu/x/2025/license/",
+      "attribution": "CS50, Harvard University; presented by Doug Lloyd",
+      "acquisition": "Downloaded the official 720p MP4 and English SRT from the linked CS50 page.",
+      "changes": "Muxed the official English SRT as a mov_text subtitle track; video and audio were copied.",
+      "source_offset_seconds": 0,
+      "duration_seconds": 819.36,
+      "sha256": "72eb05783fec586323ea9b48edefddfefdd5e661b675355e1729a94a1ea19126"
+    },
+    {
+      "id": "ajax",
+      "title": "CS50 short: AJAX",
+      "local_path": "data/eval/media/cs50-ajax-captioned.mp4",
+      "source_page": "https://cs50.harvard.edu/x/2025/shorts/ajax/",
+      "source_media": "https://cdn.cs50.net/2017/fall/shorts/ajax/ajax-720p.mp4",
+      "source_captions": "https://cdn.cs50.net/2017/fall/shorts/ajax/lang/en/ajax.srt",
+      "license": "CC BY-NC-SA 4.0",
+      "license_url": "https://cs50.harvard.edu/x/2025/license/",
+      "attribution": "CS50, Harvard University; presented by Doug Lloyd",
+      "acquisition": "Downloaded the official 720p MP4 and English SRT from the linked CS50 page.",
+      "changes": "Muxed the official English SRT as a mov_text subtitle track; video and audio were copied.",
+      "source_offset_seconds": 0,
+      "duration_seconds": 811.978,
+      "sha256": "f61e8e49f20c81a7e40b50959641b496fdad63e7eb7e36bdb86626d1e7e064e5"
+    },
+    {
+      "id": "tcp",
+      "title": "CS50 short: TCP",
+      "local_path": "data/eval/media/cs50-tcp-captioned.mp4",
+      "source_page": "https://cs50.harvard.edu/x/2025/shorts/tcp/",
+      "source_media": "https://cdn.cs50.net/2017/fall/shorts/tcp/tcp-720p.mp4",
+      "source_captions": "https://cdn.cs50.net/2017/fall/shorts/tcp/lang/en/tcp.srt",
+      "license": "CC BY-NC-SA 4.0",
+      "license_url": "https://cs50.harvard.edu/x/2025/license/",
+      "attribution": "CS50, Harvard University; presented by Doug Lloyd",
+      "acquisition": "Downloaded the official 720p MP4 and English SRT from the linked CS50 page.",
+      "changes": "Muxed the official English SRT as a mov_text subtitle track and removed a timecode data stream; video and audio were copied.",
+      "source_offset_seconds": 0,
+      "duration_seconds": 571.221,
+      "sha256": "04f46ce07daed7488f291846ac9b137902e75c25fccabbbc6dd0b1699a3195ad"
+    }
+  ],
+  "quick_check": {
+    "id": "sql_quick_check",
+    "parent_video_id": "sql_connection",
+    "local_path": "data/eval/media/cs50-sql-quick-check.mp4",
+    "source_offset_seconds": 8280,
+    "duration_seconds": 120.042,
+    "sha256": "6d791d1cf30d9fe06b94e5d67f6b760c32f0fc35f5b6d5b9d0261b71d789c0cc",
+    "changes": "A two-minute check excerpt starting 30 seconds into the prepared SQL clip; excluded from the four-video evaluation to avoid duplicate answers."
+  }
+}

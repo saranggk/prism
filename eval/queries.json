@@ -1,0 +1,148 @@
+{
+  "schema_version": 1,
+  "label_method": "Twenty questions and relevant source-caption intervals were marked before inspecting any Prism search results. Intervals are seconds in the prepared evaluation video, not the original lecture timeline.",
+  "split_rule": "Tune retrieval settings on development questions only; run the held-out questions once after settings are fixed.",
+  "queries": [
+    {
+      "id": "d1",
+      "split": "development",
+      "query": "Where do they configure the database connection?",
+      "video_filter_ids": [],
+      "relevant": [{"video_id": "sql_connection", "start_seconds": 55, "end_seconds": 98}]
+    },
+    {
+      "id": "d2",
+      "split": "development",
+      "query": "How does a CSS rule pick which HTML elements to style?",
+      "video_filter_ids": ["css", "ajax"],
+      "relevant": [{"video_id": "css", "start_seconds": 97, "end_seconds": 136}]
+    },
+    {
+      "id": "d3",
+      "split": "development",
+      "query": "How can I adjust the size of text with CSS?",
+      "video_filter_ids": [],
+      "relevant": [{"video_id": "css", "start_seconds": 220, "end_seconds": 257}]
+    },
+    {
+      "id": "d4",
+      "split": "development",
+      "query": "What makes an AJAX request asynchronous?",
+      "video_filter_ids": ["ajax"],
+      "relevant": [{"video_id": "ajax", "start_seconds": 149, "end_seconds": 164}]
+    },
+    {
+      "id": "d5",
+      "split": "development",
+      "query": "Where is the AJAX request opened and sent?",
+      "video_filter_ids": [],
+      "relevant": [{"video_id": "ajax", "start_seconds": 306, "end_seconds": 319}]
+    },
+    {
+      "id": "d6",
+      "split": "development",
+      "query": "Which port does ordinary web browsing use?",
+      "video_filter_ids": ["tcp", "sql_connection"],
+      "relevant": [{"video_id": "tcp", "start_seconds": 198, "end_seconds": 205}]
+    },
+    {
+      "id": "d7",
+      "split": "development",
+      "query": "What happens if a TCP packet is missing?",
+      "video_filter_ids": [],
+      "relevant": [{"video_id": "tcp", "start_seconds": 481, "end_seconds": 509}]
+    },
+    {
+      "id": "d8",
+      "split": "development",
+      "query": "How do they deploy the app to Kubernetes?",
+      "video_filter_ids": [],
+      "relevant": []
+    },
+    {
+      "id": "d9",
+      "split": "development",
+      "query": "Where do they create a React state hook?",
+      "video_filter_ids": ["css", "ajax"],
+      "relevant": []
+    },
+    {
+      "id": "d10",
+      "split": "development",
+      "query": "How do they configure OAuth login?",
+      "video_filter_ids": [],
+      "relevant": []
+    },
+    {
+      "id": "h1",
+      "split": "held_out",
+      "query": "How do they execute a SQL query from Python?",
+      "video_filter_ids": ["sql_connection"],
+      "relevant": [{"video_id": "sql_connection", "start_seconds": 115, "end_seconds": 148}]
+    },
+    {
+      "id": "h2",
+      "split": "held_out",
+      "query": "Why is a question mark used in the SQL query?",
+      "video_filter_ids": [],
+      "relevant": [{"video_id": "sql_connection", "start_seconds": 149, "end_seconds": 179}]
+    },
+    {
+      "id": "h3",
+      "split": "held_out",
+      "query": "How does an ID selector differ from a tag selector?",
+      "video_filter_ids": ["css", "tcp"],
+      "relevant": [{"video_id": "css", "start_seconds": 320, "end_seconds": 362}]
+    },
+    {
+      "id": "h4",
+      "split": "held_out",
+      "query": "When should the same CSS class be applied to multiple tags?",
+      "video_filter_ids": [],
+      "relevant": [{"video_id": "css", "start_seconds": 375, "end_seconds": 402}]
+    },
+    {
+      "id": "h5",
+      "split": "held_out",
+      "query": "Where do they use jQuery to update the page after an AJAX request?",
+      "video_filter_ids": ["ajax"],
+      "relevant": [{"video_id": "ajax", "start_seconds": 594, "end_seconds": 622}]
+    },
+    {
+      "id": "h6",
+      "split": "held_out",
+      "query": "Why does a packet need both an IP address and a port number?",
+      "video_filter_ids": [],
+      "relevant": [{"video_id": "tcp", "start_seconds": 108, "end_seconds": 140}]
+    },
+    {
+      "id": "h7",
+      "split": "held_out",
+      "query": "How are TCP packets put back in order?",
+      "video_filter_ids": ["tcp", "sql_connection"],
+      "relevant": [{"video_id": "tcp", "start_seconds": 143, "end_seconds": 166}]
+    },
+    {
+      "id": "h8",
+      "split": "held_out",
+      "query": "Where do they run a database schema migration?",
+      "video_filter_ids": [],
+      "relevant": []
+    },
+    {
+      "id": "h9",
+      "split": "held_out",
+      "query": "How do they train a GPU model?",
+      "video_filter_ids": [],
+      "relevant": []
+    },
+    {
+      "id": "h10",
+      "split": "held_out",
+      "query": "Which network port is used for secure web browsing?",
+      "video_filter_ids": ["css", "ajax"],
+      "relevant": [],
+      "note": "The answer occurs in TCP, which this query deliberately excludes."
+    }
+  ]
+}
