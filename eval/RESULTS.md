@@ -1,8 +1,9 @@
-# Transcript search evaluation
+# Retrieval evaluation
 
-This is a local, real-model run of Prism's first vertical slice. It evaluates
-**transcript search only**. Visual search, frame/clip queries, and the research
-agent are future work. The raw run output stays in ignored `data/eval/`.
+The first section preserves the local, real-model **transcript-only** baseline
+from Prism's first vertical slice. The second section measures combined
+retrieval. Frame/clip uploads and the research agent remain future work.
+Raw run output stays in ignored `data/eval/`.
 
 ## Corpus and method
 
@@ -97,10 +98,94 @@ uv run python ../eval/run.py development
 uv run python ../eval/run.py held_out
 ```
 
-The first command uploads only missing corpus videos, then waits for all four
+The first command uploads only missing corpus videos, then waits for all five
 to become ready. The later commands write local JSON under `data/eval/`.
+The processing script now ends its total at the passages checkpoint because
+visual indexing updates the video record later; the original table used the
+video-ready timestamp, so tiny differences from that table are expected.
 The held-out runner sends one unlabeled warmup request and three measured
 requests per question. To test another cutoff, set
 `PRISM_SEARCH_SIMILARITY_CUTOFF` before starting the API and use only the
 development split when choosing it. The scorer and hand-calculated examples
 are in `server/prism/evaluate.py` and `server/tests/test_evaluation.py`.
+
+## Combined retrieval slice (2026-09-30)
+
+Prism now indexes the existing roughly five-second preview frames with a pinned
+local CLIP text-image model. A ready video remains transcript-searchable while
+its frames are indexed. The four tutorials contain 61 SQL, 164 CSS, 163 AJAX,
+and 115 TCP indexed frames. The corpus also contains a 42-second, silent
+[Open Digital Mentor product demo](https://github.com/cendywang/open-digital-mentor)
+with nine indexed frames. The source demo is CC BY-SA 4.0; its visible
+attribution card was retained, and the local copy was converted to H.264
+yuv420p for Prism. [Corpus metadata](corpus.json) records the source, edit,
+license, and checksum. No media is committed.
+
+The 20 tutorial questions above were scored again in transcript-only,
+visual-only, and combined modes. Eight [visual questions](visual-queries.json)
+were labeled from the demo's visible states before looking at Prism's results:
+three answerable and one unanswerable in each split. Title-only matches are
+reported separately and do not count as timestamped hits. Final visual
+cutoffs were selected from development questions: 0.285 for videos with
+transcripts and 0.25 for silent videos. Combined ranking keeps the first five
+transcript moments before additional frame-only moments; overlapping frame
+evidence can support a transcript moment.
+
+| Corpus and mode | Development hit@5 | Development false matches | Held-out hit@5 | Held-out false matches |
+| --- | ---: | ---: | ---: | ---: |
+| Tutorials, transcript-only | 6/7 | 1/3 | 5/7 | 2/3 |
+| Tutorials, visual-only | 2/7 | 0/3 | 2/7 | 0/3 |
+| Tutorials, combined | 6/7 | 1/3 | 5/7 | 2/3 |
+| Silent product demo, visual-only | 1/3 | 0/1 | 1/3 | 0/1 |
+| Silent product demo, combined | 1/3 | 0/1 | 1/3 | 0/1 |
+
+The scorer also measures the difference between the first returned moment's
+start and the nearest labeled interval's start, plus interval overlap (IoU).
+These include top-ranked misses, so a large error can coexist with a top-five
+hit. The final local runs measured:
+
+| Corpus and mode | Development mean start error / mean IoU | Held-out mean start error / mean IoU |
+| --- | ---: | ---: |
+| Tutorials, transcript-only | 75.14 s / 0.165 (7 samples) | 130.43 s / 0.450 (7) |
+| Tutorials, visual-only | 147.61 s / 0.014 (6) | 87.80 s / 0.061 (5) |
+| Tutorials, combined | 75.14 s / 0.165 (7) | 130.43 s / 0.450 (7) |
+| Silent demo, visual-only and combined | 1.50 s / 0.750 (1) | 1.50 s / 0.750 (1) |
+
+The tutorial transcript and combined modes have identical top-five quality
+and timestamp metrics in this small run. Combined search did **not** improve
+the measured tutorial hit rate. It adds frame-only moments after the five
+strongest transcript moments, and the interface can search frames alone.
+Visual retrieval found the demo's credits screen but missed two text-heavy
+interface states. CLIP is weak evidence for small UI text; Prism does not
+claim to read that text. The demo's unanswerable chart question returned
+no moment.
+
+The first combined development run ranked many five-second frames ahead of
+relevant transcript passages: hit@5 fell to 4/7 and all three unanswerable
+tutorial questions returned a moment. The revised merge and development
+cutoff restored the transcript baseline on development. **The held-out
+questions had already been seen in the initial run**; the final-settings
+held-out figures in the table are retrospective checks, not an untouched
+estimate of generalization. More independently labeled media is needed
+before claiming a quality gain.
+
+On the same local machine, manually indexing the real SQL video took
+**93.12 seconds** for 61 frames; the silent demo took **6.41 seconds** for
+nine frames. These are single runs that include model loading and database
+work, not per-frame benchmarks. With models loaded, 30 repeated tutorial
+held-out requests had median API search times of **22.4 ms** for transcript
+mode and **50.1 ms** for final combined mode; combined p95 was **97.4 ms**.
+The development run's first combined query took **11.03 seconds** because
+it loaded models, so its p95 is not a warmed-search figure. Browser rendering
+and video transfer are excluded. No paid model API calls were made;
+electricity and monetary compute cost were not measured.
+
+To reproduce the final local comparison after ingesting the
+[corpus](corpus.json), run the API and worker with their pinned models and use
+`python ../eval/run.py development --mode combined` from `server/`, then
+`python ../eval/run.py held_out --mode combined`. Repeat with `transcript` or
+`visual` for the source-specific modes. Pass
+`--queries-path ../eval/visual-queries.json` for the product-demo questions.
+Use development labels to choose settings, then collect fresh held-out labels
+for a future tuning cycle. The existing held-out questions should not be
+treated as untouched again.

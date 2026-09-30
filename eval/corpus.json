@@ -1,8 +1,22 @@
 {
   "schema_version": 1,
-  "purpose": "Small local transcript-search evaluation corpus; media files are not committed.",
-  "license_note": "CS50 course media is CC BY-NC-SA 4.0. Credit CS50/Harvard, link the applicable course license, and identify the edits below. The license applies to the media, not Prism's source code.",
+  "purpose": "Small local transcript and visual search evaluation corpus; media files are not committed.",
+  "license_note": "CS50 course media is CC BY-NC-SA 4.0; the Open Digital Mentor demo is CC BY-SA 4.0. Each entry records attribution and edits. These media licenses do not apply to Prism's source code.",
   "videos": [
+    {
+      "id": "open_digital_mentor",
+      "title": "Open Digital Mentor product demo",
+      "local_path": "data/eval/media/open-digital-mentor-prism.mp4",
+      "source_page": "https://github.com/cendywang/open-digital-mentor",
+      "source_media": "https://github.com/cendywang/open-digital-mentor/blob/main/docs/demo.mp4",
+      "license": "CC BY-SA 4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "attribution": "Open Digital Mentor contributors; video retains its visible character-asset attribution card",
+      "acquisition": "Downloaded the repository's 42-second mock-mode product demonstration.",
+      "changes": "Converted full-range H.264/yuvj420p to limited-range H.264/yuv420p for Prism's browser-video contract; no audio or content edits.",
+      "duration_seconds": 42,
+      "sha256": "c2519ba58fa65363300c0f65c32be80448bbb3ed2254217c6ecdb6f330f6ff87"
+    },
     {
       "id": "sql_connection",
       "title": "CS50 SQL lecture: Python database connection",

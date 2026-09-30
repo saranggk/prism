@@ -2,18 +2,22 @@
 
 import { useRef, useState } from "react";
 
-import { mediaUrl, type SearchResult } from "@/lib/api";
+import { mediaUrl, type SearchResult, type VideoResult } from "@/lib/api";
 
 export function formatTime(seconds: number): string {
   const whole = Math.floor(Math.max(0, seconds));
   return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, "0")}`;
 }
 
-export function VideoPlayer({ result }: { result: SearchResult }) {
+export function VideoPlayer({ result }: { result: SearchResult | VideoResult }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [playBlocked, setPlayBlocked] = useState(false);
   const [mediaError, setMediaError] = useState(false);
-  const seekTo = Math.max(0, result.start_seconds - 3);
+  const moment = "start_seconds" in result ? result : null;
+  const matchTime = moment?.evidence.includes("frame") && !moment.evidence.includes("transcript")
+    ? moment.preview_time_seconds ?? moment.start_seconds
+    : moment?.start_seconds ?? 0;
+  const seekTo = Math.max(0, matchTime - 3);
 
   function onMetadata() {
     const video = videoRef.current;
@@ -29,7 +33,7 @@ export function VideoPlayer({ result }: { result: SearchResult }) {
           <p className="eyebrow">NOW PLAYING</p>
           <h3>{result.video_title}</h3>
         </div>
-        <span>Passage {formatTime(result.start_seconds)}–{formatTime(result.end_seconds)}</span>
+        <span>{moment ? moment.evidence.includes("frame") && !moment.evidence.includes("transcript") ? "Frame" : "Moment" : "Video title"} {formatTime(moment?.start_seconds ?? 0)}{moment && moment.end_seconds > moment.start_seconds ? `–${formatTime(moment.end_seconds)}` : ""}</span>
       </div>
       <video ref={videoRef} controls playsInline preload="metadata" src={mediaUrl(result.playback_url)}
         onLoadedMetadata={onMetadata} onError={() => setMediaError(true)}

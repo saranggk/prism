@@ -2,18 +2,18 @@
 
 Find the moment you need in a video library.
 
-Prism is a local-first video research project. The first milestone is uploading a short tutorial, preparing timestamped transcripts and preview images, then searching and playing the matching moment.
+Prism is a local-first video research project. Upload a short tutorial or product demo, prepare timestamped transcripts and representative frames, then search and play a matching moment.
 
-**Status:** the local upload → process → transcript search → timestamp playback slice works. Search matches are provisional; visual search, clip collections, and the research agent are not built yet. [Real-media evaluation](eval/RESULTS.md) reports measured successes and misses.
+**Status:** the local upload → process → combined transcript/frame/title search → timestamp playback slice works. Search matches are provisional; frame and clip uploads, collections, and the research agent are not built yet. [Real-media evaluation](eval/RESULTS.md) reports measured successes and misses.
 
 ## Stack
 
 - **Next.js + TypeScript:** browser interface.
 - **FastAPI + Python:** API, retrieval, and a separate processing worker.
-- **PostgreSQL + pgvector:** records and transcript embeddings.
+- **PostgreSQL + pgvector:** records, transcript embeddings, and frame embeddings.
 - **PgQueuer:** durable background jobs in the same database.
 - **FFmpeg:** media validation and frame extraction.
-- **faster-whisper + MiniLM:** pinned local transcription and text embeddings.
+- **faster-whisper + MiniLM + CLIP:** pinned local transcription, transcript embeddings, and frame/text embeddings.
 
 PostgreSQL runs in Docker; the application runs directly on your machine. Videos and generated files stay in an ignored local data directory.
 
@@ -57,16 +57,16 @@ npm ci
 npm run dev
 ```
 
-Open <http://127.0.0.1:3000> to upload an English H.264 MP4 (up to 15 minutes or 500 MiB) and see its processing state. Suitable English captions are used first; otherwise audio is transcribed locally. A silent video becomes ready with previews and a “no transcript” label. Search ready videos with a question, optionally narrow to selected videos, then open a result to play the original at the matching time. The API health endpoint is <http://127.0.0.1:8000/health>. The checked-in `.env.example` lists optional local settings; defaults work with the Compose database.
+Open <http://127.0.0.1:3000> to upload an English H.264 MP4 (up to 15 minutes or 500 MiB) and see its processing state. Suitable English captions are used first; otherwise audio is transcribed locally. A silent video becomes ready with previews and a “no transcript” label. Visual indexing runs separately, so ready transcript search remains available while its frames are indexed. Failed visual indexing can be retried from the library. Search ready videos with a question, optionally narrow to selected videos or an evidence source, then open a moment to play the original at its timestamp. Frame matches show the sampled frame; title-only matches appear separately at video level. The API health endpoint is <http://127.0.0.1:8000/health>. The checked-in `.env.example` lists optional local settings; defaults work with the Compose database.
 
 Run `uv run ruff check .` from `server/`, and `npm run lint`, `npm run typecheck`, and `npm run build` from `web/` to check the current code.
 
 ## Scope
 
-The first milestone supports short English MP4 tutorials, transcript search across a library or selected videos, and timestamped playback. Preview images provide context; they do not establish a visual match.
+The current local slice supports short English MP4 tutorials and demos, transcript and representative-frame search across a library or selected videos, title matches, and timestamped playback. Frames are sampled about every five seconds, so brief visual actions can be missed. A nearby preview provides context unless the result explicitly labels it as a frame match.
 
-Later milestones add visual and combined retrieval, frame/clip queries, saved collections, and an agent that assembles sourced clips. A hosted demo follows a working local version.
+Later milestones add frame/clip queries, saved collections, and an agent that assembles sourced clips. A hosted demo follows a working local version.
 
 ## Evaluation
 
-The [evaluation report](eval/RESULTS.md) describes four real tutorials, 20 pre-labeled questions, retrieval quality, timestamp error, and local processing/search timings. It explains how to rerun the scorer and where the first model fails. CI runs deterministic behavior tests; real media and model caches are kept out of Git.
+The [evaluation report](eval/RESULTS.md) describes four real tutorials and a product demo, pre-labeled transcript and visual questions, retrieval quality, timestamp error, and local processing/search timings. It explains where visual search misses text-heavy interface steps and how to rerun the scorer. CI runs deterministic behavior tests; real media and model caches are kept out of Git.

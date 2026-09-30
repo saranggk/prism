@@ -1,7 +1,8 @@
 """Measure completed processing stages from Prism's persisted checkpoints.
 
 The first interval starts when upload registration commits, so upload transfer
-time is excluded. Queue waiting is included in the frames interval.
+time is excluded. Queue waiting is included in the frames interval. Visual
+indexing updates the video later, so the total ends at the passages checkpoint.
 """
 
 import argparse
@@ -36,7 +37,7 @@ def measure(map_path: Path, output: Path) -> dict:
             frames = (times["frames"] - row["created_at"]).total_seconds()
             transcript = (times["transcript"] - times["frames"]).total_seconds()
             passages = (times["passages"] - times["transcript"]).total_seconds()
-            total = (row["updated_at"] - row["created_at"]).total_seconds()
+            total = (times["passages"] - row["created_at"]).total_seconds()
             measured[name] = {
                 "video_duration_seconds": row["duration_seconds"],
                 "upload_excluded_seconds": round(total, 2),

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { listVideos, retryVideo, uploadVideo, type Video } from "@/lib/api";
+import { listVideos, retryVideo, retryVisual, uploadVideo, type Video } from "@/lib/api";
 import { SearchResults } from "@/components/search-results";
 import { formatTime } from "@/components/video-player";
 
@@ -41,7 +41,7 @@ export function VideoLibrary() {
 
   useEffect(() => { queueMicrotask(() => { void refresh(); }); }, [refresh]);
   useEffect(() => {
-    if (!videos.some((video) => video.status === "queued" || video.status === "processing")) return;
+    if (!videos.some((video) => video.status === "queued" || video.status === "processing" || video.visual_state === "pending" || video.visual_state === "indexing")) return;
     const timer = window.setInterval(() => { void refresh(); }, 2000);
     return () => window.clearInterval(timer);
   }, [videos, refresh]);
@@ -78,11 +78,11 @@ export function VideoLibrary() {
     }
   }
 
-  async function onRetry(id: string) {
+  async function runRetry(id: string, retry: (id: string) => Promise<Video>) {
     setRetrying(id);
     setListError("");
     try {
-      await retryVideo(id);
+      await retry(id);
       await refresh();
     } catch (error) {
       setListError(error instanceof Error ? error.message : "Retry failed.");
@@ -137,11 +137,15 @@ export function VideoLibrary() {
                 <h3>{video.title}</h3>
                 <p>{formatTime(video.duration_seconds)} · Added {new Date(video.created_at).toLocaleDateString()}</p>
                 {video.status === "failed" && video.error && <p className="video-error">{video.error}</p>}
+                {video.status === "ready" && video.visual_error && <p className="video-error">{video.visual_error}</p>}
               </div>
               <div className="video-state">
                 <span className={`video-badge video-badge-${video.status}`}><i aria-hidden="true" />{statusText(video)}</span>
                 {video.status === "failed" && <button type="button" disabled={retrying === video.id}
-                  onClick={() => { void onRetry(video.id); }}>{retrying === video.id ? "Retrying…" : "Retry"}</button>}
+                  onClick={() => { void runRetry(video.id, retryVideo); }}>{retrying === video.id ? "Retrying…" : "Retry"}</button>}
+                {video.status === "ready" && <span className="visual-status">{video.visual_state === "ready" ? "Visual search ready" : video.visual_state === "failed" ? "Visual search failed" : video.visual_state === "indexing" ? "Indexing frames" : "Visual search queued"}</span>}
+                {video.status === "ready" && video.visual_state === "failed" && <button type="button" disabled={retrying === video.id}
+                  onClick={() => { void runRetry(video.id, retryVisual); }}>{retrying === video.id ? "Retrying…" : "Retry visual search"}</button>}
               </div>
             </article>
           ))}

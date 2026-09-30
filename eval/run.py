@@ -21,12 +21,22 @@ QUERIES = ROOT / "eval" / "queries.json"
 DEFAULT_MAP = ROOT / "data" / "eval" / "video-map.json"
 
 
-def run(api_origin: str, split: str, map_path: Path, output: Path, repeats: int = 1) -> dict:
+def run(
+    api_origin: str,
+    split: str,
+    map_path: Path,
+    output: Path,
+    repeats: int = 1,
+    mode: str = "transcript",
+    queries_path: Path = QUERIES,
+) -> dict:
     if repeats < 1:
         raise ValueError("repeats must be at least one")
-    queries = json.loads(QUERIES.read_text(encoding="utf-8"))["queries"]
+    query_set = json.loads(queries_path.read_text(encoding="utf-8"))
+    queries = query_set["queries"]
     mapping = json.loads(map_path.read_text(encoding="utf-8"))
-    reverse_mapping = {video_id: name for name, video_id in mapping.items()}
+    corpus_ids = query_set.get("corpus_ids", list(mapping))
+    reverse_mapping = {mapping[name]: name for name in corpus_ids}
     selected_queries = [row for row in queries if row["split"] == split]
     cases = []
     scores = []
@@ -36,15 +46,17 @@ def run(api_origin: str, split: str, map_path: Path, output: Path, repeats: int 
         if split == "held_out":
             warmup = client.get(
                 "/search",
-                params=[("q", "software tutorial")]
-                + [("video_ids", video_id) for video_id in mapping.values()],
+                params=[("q", "software tutorial"), ("mode", mode)]
+                + [("video_ids", mapping[name]) for name in corpus_ids],
             )
             warmup.raise_for_status()
         for query in selected_queries:
             filters = query["video_filter_ids"]
             # Even an unfiltered corpus question excludes unrelated local uploads.
-            scoped_ids = filters or list(mapping)
-            params = [("q", query["query"])] + [("video_ids", mapping[name]) for name in scoped_ids]
+            scoped_ids = filters or corpus_ids
+            params = [("q", query["query"]), ("mode", mode)] + [
+                ("video_ids", mapping[name]) for name in scoped_ids
+            ]
             latencies = []
             for repeat in range(repeats):
                 started = time.perf_counter()
@@ -74,6 +86,7 @@ def run(api_origin: str, split: str, map_path: Path, output: Path, repeats: int 
                     "video_filter_ids": filters,
                     "relevant": query["relevant"],
                     "state": payload["state"],
+                    "video_results": payload.get("video_results", []),
                     "latency_ms": latencies,
                     "top_5": [
                         {
@@ -81,6 +94,7 @@ def run(api_origin: str, split: str, map_path: Path, output: Path, repeats: int 
                             "start_seconds": result.start_seconds,
                             "end_seconds": result.end_seconds,
                             "excerpt": raw_results[index]["excerpt"],
+                            "evidence": raw_results[index].get("evidence", []),
                         }
                         for index, result in enumerate(results[:5])
                     ],
@@ -91,6 +105,8 @@ def run(api_origin: str, split: str, map_path: Path, output: Path, repeats: int 
 
     report = {
         "split": split,
+        "mode": mode,
+        "queries_path": str(queries_path),
         "run_at_utc": datetime.now(UTC).isoformat(),
         "api_origin": api_origin,
         "platform": platform.platform(),
@@ -125,6 +141,10 @@ def main() -> None:
     parser.add_argument("split", choices=["development", "held_out"])
     parser.add_argument("--api-origin", default="http://127.0.0.1:8000")
     parser.add_argument("--map-path", type=Path, default=DEFAULT_MAP)
+    parser.add_argument("--queries-path", type=Path, default=QUERIES)
+    parser.add_argument(
+        "--mode", choices=["transcript", "visual", "combined"], default="transcript"
+    )
     parser.add_argument("--repeats", type=int, help="Defaults to 1 for dev, 3 for held-out")
     parser.add_argument(
         "--output",
@@ -132,9 +152,12 @@ def main() -> None:
         help="Report path; defaults to data/eval/<split>-run.json",
     )
     args = parser.parse_args()
-    output = args.output or ROOT / "data" / "eval" / f"{args.split}-run.json"
+    output = (
+        args.output
+        or ROOT / "data" / "eval" / f"{args.queries_path.stem}-{args.mode}-{args.split}.json"
+    )
     repeats = args.repeats if args.repeats is not None else (3 if args.split == "held_out" else 1)
-    run(args.api_origin, args.split, args.map_path, output, repeats)
+    run(args.api_origin, args.split, args.map_path, output, repeats, args.mode, args.queries_path)
 
 
 if __name__ == "__main__":

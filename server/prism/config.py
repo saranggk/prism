@@ -15,6 +15,10 @@ class Settings(BaseSettings):
     frontend_origin: str = "http://127.0.0.1:3000"
     data_dir: Path = PROJECT_ROOT / "data"
     search_similarity_cutoff: float = 0.3  # Provisional until development labels exist.
+    visual_similarity_cutoff: float = 0.285  # Calibrated on tutorial development questions.
+    silent_visual_similarity_cutoff: float = (
+        0.25  # Calibrated on silent-demo development questions.
+    )
 
     @property
     def storage_path(self) -> Path:

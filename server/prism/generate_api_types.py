@@ -5,7 +5,7 @@ from pathlib import Path
 from prism.main import app
 
 TARGET = Path(__file__).resolve().parents[2] / "web/src/lib/api-types.ts"
-NAMES = ("Video", "SearchResult", "SearchResponse")
+NAMES = ("Video", "SearchResult", "VideoResult", "SearchResponse")
 
 
 def ts_type(schema: dict) -> str:

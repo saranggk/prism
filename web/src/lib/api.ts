@@ -1,6 +1,6 @@
 import type { SearchResponse, Video } from "@/lib/api-types";
 
-export type { SearchResult, SearchResponse, Video } from "@/lib/api-types";
+export type { SearchResult, SearchResponse, Video, VideoResult } from "@/lib/api-types";
 
 const origin = process.env.NEXT_PUBLIC_API_ORIGIN ?? "http://127.0.0.1:8000";
 
@@ -26,14 +26,23 @@ export function listVideos(): Promise<Video[]> {
   return request<Video[]>("/videos");
 }
 
-export function searchVideos(query: string, videoIds: string[], signal?: AbortSignal): Promise<SearchResponse> {
-  const params = new URLSearchParams({ q: query });
+export type SearchMode = "combined" | "transcript" | "visual";
+
+export function searchVideos(query: string, videoIds: string[], mode: SearchMode, signal?: AbortSignal): Promise<SearchResponse> {
+  const params = new URLSearchParams({ q: query, mode });
   for (const id of videoIds) params.append("video_ids", id);
   return request<SearchResponse>(`/search?${params.toString()}`, { signal });
 }
 
 export function retryVideo(id: string): Promise<Video> {
   return request<Video>(`/videos/${encodeURIComponent(id)}/retry`, {
+    method: "POST",
+    headers: { "X-Prism-Request": "1" },
+  });
+}
+
+export function retryVisual(id: string): Promise<Video> {
+  return request<Video>(`/videos/${encodeURIComponent(id)}/retry-visual`, {
     method: "POST",
     headers: { "X-Prism-Request": "1" },
   });

@@ -110,3 +110,53 @@ def test_search_rejects_empty_or_long_queries_and_explains_empty_states(api, mon
     assert response.status_code == 200
     assert response.json()["state"] == "no_matches"
     assert response.json()["results"] == []
+
+
+def test_visual_search_finds_silent_frame_and_keeps_title_match_separate(api, monkeypatch):
+    from prism import search
+    from prism.visual import MODEL_REVISION
+
+    client, tmp_path = api
+    video_id = seed("Database connection demo", "ready", [], tmp_path)
+    with psycopg.connect(os.environ["PRISM_TEST_DATABASE_URL"].replace("+psycopg", "")) as db:
+        db.execute(
+            "UPDATE videos SET transcript_state = 'none', visual_state = 'ready' WHERE id = %s",
+            (video_id,),
+        )
+        db.execute(
+            "UPDATE frames SET embedding = %s::vector, model_revision = %s WHERE video_id = %s",
+            ("[1," + "0," * 510 + "0]", MODEL_REVISION, video_id),
+        )
+    query_vector = np.zeros(512, dtype=np.float32)
+    query_vector[0] = 1
+    monkeypatch.setattr(search, "embed_query", lambda query: query_vector)
+
+    payload = client.get("/search", params={"q": "database connection"}).json()
+    assert payload["state"] == "results"
+    assert payload["results"][0]["evidence"] == ["frame"]
+    assert payload["results"][0]["excerpt"] is None
+    assert payload["results"][0]["preview_time_seconds"] == 4
+    assert payload["video_results"][0]["video_id"] == str(video_id)
+    assert payload["video_results"][0]["evidence"] == "title"
+    assert (
+        client.get("/search", params={"q": "database connection", "mode": "transcript"}).json()[
+            "state"
+        ]
+        == "no_searchable_videos"
+    )
+    assert (
+        client.get(
+            "/search", params={"q": "database connection", "video_ids": str(uuid4())}
+        ).status_code
+        == 422
+    )
+
+
+def test_title_only_match_does_not_claim_a_moment(api):
+    client, tmp_path = api
+    video_id = seed("Database connection demo", "ready", [], tmp_path)
+    with psycopg.connect(os.environ["PRISM_TEST_DATABASE_URL"].replace("+psycopg", "")) as db:
+        db.execute("UPDATE videos SET transcript_state = 'none' WHERE id = %s", (video_id,))
+    payload = client.get("/search", params={"q": "database connection"}).json()
+    assert payload["results"] == []
+    assert payload["video_results"][0]["video_id"] == str(video_id)

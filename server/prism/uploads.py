@@ -16,7 +16,14 @@ from starlette.datastructures import UploadFile as StarletteUploadFile
 from starlette.responses import JSONResponse
 
 from prism.config import get_settings
-from prism.jobs import get_video, list_videos, referenced_upload_ids, register_video, retry_video
+from prism.jobs import (
+    get_video,
+    list_videos,
+    referenced_upload_ids,
+    register_video,
+    retry_video,
+    retry_visual,
+)
 from prism.models import Video
 
 logger = logging.getLogger(__name__)
@@ -211,6 +218,11 @@ def video(video_id: UUID) -> Video:
 @router.post("/videos/{video_id}/retry", response_model=Video)
 def retry(video_id: UUID) -> Video:
     return retry_video(video_id)
+
+
+@router.post("/videos/{video_id}/retry-visual", response_model=Video)
+def retry_visual_index(video_id: UUID) -> Video:
+    return retry_visual(video_id)
 
 
 def reconcile_uploads() -> None:

@@ -3,20 +3,21 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { mediaUrl, searchVideos, type SearchResponse, type SearchResult, type Video } from "@/lib/api";
+import { mediaUrl, searchVideos, type SearchMode, type SearchResponse, type SearchResult, type Video, type VideoResult } from "@/lib/api";
 import { formatTime, VideoPlayer } from "@/components/video-player";
 
 export function SearchResults({ videos }: { videos: Video[] }) {
   const [query, setQuery] = useState("");
   const [submitted, setSubmitted] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [mode, setMode] = useState<SearchMode>("combined");
   const [response, setResponse] = useState<SearchResponse | null>(null);
-  const [active, setActive] = useState<SearchResult | null>(null);
+  const [active, setActive] = useState<SearchResult | VideoResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const requestId = useRef(0);
   const controller = useRef<AbortController | null>(null);
-  const searchable = videos.filter((video) => video.status === "ready" && video.transcript_state === "present");
+  const searchable = videos.filter((video) => video.status === "ready");
 
   useEffect(() => () => controller.current?.abort(), []);
 
@@ -26,7 +27,7 @@ export function SearchResults({ videos }: { videos: Video[] }) {
     setLoading(false);
   }
 
-  function execute(text: string, ids: string[]) {
+  function execute(text: string, ids: string[], source: SearchMode = mode) {
     invalidate();
     const current = requestId.current;
     const next = new AbortController();
@@ -35,7 +36,7 @@ export function SearchResults({ videos }: { videos: Video[] }) {
     setActive(null);
     setError("");
     setLoading(true);
-    void searchVideos(text, ids, next.signal).then((data) => {
+    void searchVideos(text, ids, source, next.signal).then((data) => {
       if (current === requestId.current) setResponse(data);
     }).catch((cause: unknown) => {
       if (current === requestId.current && !next.signal.aborted) {
@@ -71,7 +72,7 @@ export function SearchResults({ videos }: { videos: Video[] }) {
       <div className="search-heading">
         <p className="eyebrow">FIND A MOMENT</p>
         <h2 id="search-title">Search your videos</h2>
-        <p>Ask where a step happens. Results come from spoken words or captions.</p>
+        <p>Find a spoken explanation or a visible step. Results show the evidence that matched.</p>
       </div>
       <form className="search-form" onSubmit={submit}>
         <label htmlFor="search-query" className="sr-only">Search question</label>
@@ -87,9 +88,20 @@ export function SearchResults({ videos }: { videos: Video[] }) {
           }} />
         <button type="submit" disabled={loading || searchable.length === 0}>Search <span aria-hidden="true">↗</span></button>
       </form>
+      <fieldset className="source-filters">
+        <legend>Evidence to search</legend>
+        {([["combined", "All evidence"], ["transcript", "Transcript"], ["visual", "Frames"]] as const).map(([value, label]) =>
+          <label key={value}>
+            <input type="radio" name="search-mode" checked={mode === value} onChange={() => {
+              setMode(value);
+              if (submitted) execute(submitted, selectedIds, value);
+            }} />
+            {label}
+          </label>)}
+      </fieldset>
       <fieldset className="video-filters">
         <legend>Videos to search <span>{selectedIds.length ? `${selectedIds.length} selected` : "All ready videos"}</span></legend>
-        {searchable.length === 0 ? <p>No ready videos with transcripts yet. Upload a tutorial or wait for processing to finish.</p> :
+        {searchable.length === 0 ? <p>No ready videos yet. Upload a tutorial or wait for processing to finish.</p> :
           <div className="filter-options">
             {searchable.map((video) => <label key={video.id} className={selectedIds.includes(video.id) ? "is-selected" : ""}>
               <input type="checkbox" value={video.id} checked={selectedIds.includes(video.id)} onChange={() => toggle(video.id)} />
@@ -102,38 +114,54 @@ export function SearchResults({ videos }: { videos: Video[] }) {
           </div>}
       </fieldset>
       <div className="search-feedback" aria-live="polite" aria-busy={loading}>
-        {loading && <p className="search-message">Searching ready transcripts…</p>}
+        {loading && <p className="search-message">Searching ready videos…</p>}
         {error && <p className="inline-error" role="alert">{error}</p>}
         {!loading && !error && response?.state === "no_searchable_videos" &&
-          <p className="search-message">None of the selected videos has a ready transcript. Clear filters or wait for processing.</p>}
+          <p className="search-message">None of the selected videos has searchable evidence yet. Clear filters or wait for processing.</p>}
         {!loading && !error && response?.state === "no_matches" &&
-          <p className="search-message">No passages qualified for this search. Try different words or clear your filters.</p>}
+          <p className="search-message">No evidence qualified for this search. Try different words or clear your filters.</p>}
         {!loading && response?.state === "results" && <>
           <div className="results-heading">
-            <h3>{response.results.length} possible {response.results.length === 1 ? "match" : "matches"}</h3>
-            <p>Transcript matches are suggestions. Preview images show nearby context, not visual proof. Ranking is provisional.</p>
+            <h3>{response.results.length} possible {response.results.length === 1 ? "moment" : "moments"}</h3>
+            <p>Matches are suggestions. A preview is visual evidence only when labeled “Frame match.” Ranking is provisional.</p>
           </div>
           <div className="results-grid">
             {response.results.map((result) => {
               const key = `${result.video_id}:${result.start_seconds}:${result.end_seconds}`;
-              const chosen = active?.video_id === result.video_id && active.start_seconds === result.start_seconds;
+              const chosen = active?.video_id === result.video_id && "start_seconds" in active && active.start_seconds === result.start_seconds;
               return <article className={`result-card${chosen ? " is-active" : ""}`} key={key}>
-                <div className="result-preview">
+                <div className={`result-preview${result.evidence.includes("frame") ? " is-evidence" : ""}`}>
                   {result.preview_url ? <img src={mediaUrl(result.preview_url)} alt={`Frame from ${result.video_title} at ${formatTime(result.preview_time_seconds ?? 0)}`} /> :
                     <span>No preview available</span>}
                   <span className="preview-time">{result.preview_time_seconds === null ? "" : formatTime(result.preview_time_seconds)}</span>
                 </div>
                 <div className="result-body">
                   <p className="result-source">{result.video_title} <span>· {formatTime(result.start_seconds)}–{formatTime(result.end_seconds)}</span></p>
-                  <p className="result-excerpt">“{result.excerpt}”</p>
+                  <p className="evidence-label">{result.evidence.map((source) => source === "frame" ? "Frame match" : "Transcript match").join(" · ")}</p>
+                  {result.excerpt && <p className="result-excerpt">“{result.excerpt}”</p>}
+                  {result.evidence.includes("frame") && result.preview_time_seconds !== null &&
+                    <p className="evidence-detail">Matching frame at {formatTime(result.preview_time_seconds)}</p>}
+                  {!result.evidence.includes("frame") && result.preview_url && result.preview_time_seconds !== null &&
+                    <p className="evidence-detail">Context frame at {formatTime(result.preview_time_seconds)}</p>}
                   <button type="button" onClick={() => setActive(result)}>{chosen ? "Playing this moment" : "Play this moment"} <span aria-hidden="true">→</span></button>
                 </div>
               </article>;
             })}
           </div>
+          {(response.video_results?.length ?? 0) > 0 && <div className="video-level-results">
+            <h3>Matching video titles</h3>
+            <p>Title matches identify a video, not a specific moment.</p>
+            {response.video_results?.map((video) => <article className="result-card" key={video.video_id}>
+              <div className="result-body">
+                <p className="result-source">{video.video_title}</p>
+                <p className="evidence-label">Title match</p>
+                <button type="button" onClick={() => setActive(video)}>Open video <span aria-hidden="true">→</span></button>
+              </div>
+            </article>)}
+          </div>}
         </>}
       </div>
-      {active && <VideoPlayer key={`${active.video_id}:${active.start_seconds}:${active.end_seconds}`} result={active} />}
+      {active && <VideoPlayer key={`${active.video_id}:${"start_seconds" in active ? active.start_seconds : "title"}`} result={active} />}
     </section>
   );
 }

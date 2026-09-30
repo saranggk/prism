@@ -15,5 +15,7 @@ class Video(BaseModel):
     current_step: str | None
     error: str | None
     transcript_state: Literal["present", "none"] | None = None
+    visual_state: Literal["pending", "indexing", "ready", "failed"] = "pending"
+    visual_error: str | None = None
     created_at: datetime
     updated_at: datetime

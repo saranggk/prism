@@ -15,7 +15,7 @@ from prism.models import Video
 ENTRYPOINT = "process_video"
 VIDEO_COLUMNS = (
     "id, title, duration_seconds, status, current_step, error, "
-    "transcript_state, created_at, updated_at"
+    "transcript_state, visual_state, visual_error, created_at, updated_at"
 )
 
 
@@ -77,6 +77,34 @@ def retry_video(video_id: UUID) -> Video:
             "UPDATE videos SET status = 'queued', current_step = NULL, error = NULL, "
             "job_id = %s, interrupted_attempts = 0, updated_at = now() WHERE id = %s",
             (job_id, video_id),
+        )
+        result = db.execute(
+            f"SELECT {VIDEO_COLUMNS} FROM videos WHERE id = %s", (video_id,)
+        ).fetchone()
+    return Video.model_validate(result)
+
+
+def retry_visual(video_id: UUID) -> Video:
+    with connect() as db, db.transaction():
+        row = db.execute(
+            "SELECT status, visual_state FROM videos WHERE id = %s FOR UPDATE", (video_id,)
+        ).fetchone()
+        if row is None:
+            raise HTTPException(status_code=404, detail="Video not found.")
+        if row["status"] != "ready" or row["visual_state"] != "failed":
+            raise HTTPException(
+                status_code=409, detail="Only failed visual indexing can be retried."
+            )
+        SyncQueries(SyncPsycopgDriver(db)).enqueue(
+            "index_visual",
+            str(video_id).encode(),
+            dedupe_key=f"visual:{video_id}",
+            on_conflict="skip",
+        )
+        db.execute(
+            "UPDATE videos SET visual_state = 'pending', visual_error = NULL, "
+            "updated_at = now() WHERE id = %s",
+            (video_id,),
         )
         result = db.execute(
             f"SELECT {VIDEO_COLUMNS} FROM videos WHERE id = %s", (video_id,)

@@ -8,7 +8,9 @@ from uuid import UUID, uuid4
 
 import psycopg
 from pgqueuer import PgQueuer
+from pgqueuer.db import SyncPsycopgDriver
 from pgqueuer.models import Job
+from pgqueuer.queries import SyncQueries
 from pgvector.psycopg import register_vector
 
 from prism.config import get_settings
@@ -24,6 +26,8 @@ from prism.transcripts import (
     load_embedder,
     transcribe,
 )
+from prism.visual import MODEL_REVISION as VISUAL_REVISION
+from prism.visual import download_visual_model, embed_frames
 
 logger = logging.getLogger(__name__)
 STAGES = ("frames", "transcript", "passages")
@@ -249,6 +253,12 @@ def process_video(video_id: UUID) -> None:
                     "attempt_token = NULL, updated_at = now() WHERE id = %s",
                     (video_id,),
                 )
+                SyncQueries(SyncPsycopgDriver(db)).enqueue(
+                    "index_visual",
+                    str(video_id).encode(),
+                    dedupe_key=f"visual:{video_id}",
+                    on_conflict="skip",
+                )
         except LostOwnership:
             raise
         except psycopg.Error:
@@ -303,8 +313,103 @@ def reconcile_failed_jobs() -> None:
         )
 
 
+def queue_visual_backfill() -> None:
+    """Queue ready videos lacking the current visual vectors after upgrades or restarts."""
+    with connect() as db, db.transaction():
+        db.execute(
+            "UPDATE videos AS v SET visual_state = 'pending', visual_error = NULL "
+            "WHERE v.status = 'ready' AND v.visual_state = 'ready' "
+            "AND EXISTS (SELECT 1 FROM frames AS f WHERE f.video_id = v.id "
+            "AND f.model_revision IS DISTINCT FROM %s)",
+            (VISUAL_REVISION,),
+        )
+        db.execute(
+            "UPDATE videos SET visual_state = 'pending' WHERE visual_state = 'indexing' "
+            "AND status = 'ready'"
+        )
+        rows = db.execute(
+            "SELECT id FROM videos WHERE status = 'ready' AND visual_state = 'pending'"
+        ).fetchall()
+        queue = SyncQueries(SyncPsycopgDriver(db))
+        for row in rows:
+            video_id = row["id"]
+            queue.enqueue(
+                "index_visual",
+                str(video_id).encode(),
+                dedupe_key=f"visual:{video_id}",
+                on_conflict="skip",
+            )
+
+
+def index_visual(video_id: UUID) -> None:
+    """Publish a full frame-index version atomically; transcript search stays ready."""
+    with connect() as db:
+        if not db.execute(
+            "SELECT pg_try_advisory_lock(hashtextextended(%s, 1)) AS locked", (str(video_id),)
+        ).fetchone()["locked"]:
+            return
+        try:
+            with db.transaction():
+                row = db.execute(
+                    "SELECT status, visual_state FROM videos WHERE id = %s FOR UPDATE", (video_id,)
+                ).fetchone()
+                if row is None or row["status"] != "ready" or row["visual_state"] == "ready":
+                    return
+                db.execute(
+                    "UPDATE videos SET visual_state = 'indexing', visual_error = NULL, "
+                    "updated_at = now() WHERE id = %s",
+                    (video_id,),
+                )
+            frames = db.execute(
+                "SELECT ordinal, path FROM frames WHERE video_id = %s ORDER BY ordinal",
+                (video_id,),
+            ).fetchall()
+            vectors = list(embed_frames([Path(frame["path"]) for frame in frames]))
+            with db.transaction():
+                register_vector(db)
+                with db.cursor() as cursor:
+                    cursor.executemany(
+                        "UPDATE frames SET embedding = %s, model_revision = %s "
+                        "WHERE video_id = %s AND ordinal = %s",
+                        [
+                            (vector, VISUAL_REVISION, video_id, frame["ordinal"])
+                            for frame, vector in zip(frames, vectors, strict=True)
+                        ],
+                    )
+                db.execute(
+                    "UPDATE videos SET visual_state = 'ready', visual_error = NULL, "
+                    "updated_at = now() WHERE id = %s",
+                    (video_id,),
+                )
+        except psycopg.Error as exc:
+            logger.exception("Database connection failed during visual indexing for %s", video_id)
+            with connect() as recovery, recovery.transaction():
+                recovery.execute(
+                    "UPDATE videos SET visual_state = 'failed', visual_error = %s, "
+                    "updated_at = now() WHERE id = %s AND visual_state = 'indexing'",
+                    (f"Visual indexing lost its database connection: {str(exc)[:300]}", video_id),
+                )
+        except Exception as exc:
+            logger.exception("Visual indexing failed for video %s", video_id)
+            with db.transaction():
+                db.execute(
+                    "UPDATE videos SET visual_state = 'failed', visual_error = %s, "
+                    "updated_at = now() WHERE id = %s",
+                    (f"Visual indexing failed: {str(exc)[:400]}", video_id),
+                )
+        finally:
+            if not db.closed:
+                try:
+                    db.execute(
+                        "SELECT pg_advisory_unlock(hashtextextended(%s, 1))", (str(video_id),)
+                    )
+                except psycopg.Error:
+                    pass  # Closing a broken session releases its lock.
+
+
 async def run_worker() -> None:
     await asyncio.to_thread(reconcile_failed_jobs)
+    await asyncio.to_thread(queue_visual_backfill)
     url = get_settings().database_url.replace("postgresql+psycopg://", "postgresql://", 1)
     async with await psycopg.AsyncConnection.connect(url, autocommit=True) as connection:
         queue = PgQueuer.from_psycopg_connection(connection)
@@ -314,6 +419,12 @@ async def run_worker() -> None:
             if job.payload is None:
                 raise ValueError("Video job has no ID")
             await asyncio.to_thread(process_video, UUID(job.payload.decode("utf-8")))
+
+        @queue.entrypoint("index_visual", concurrency_limit=1, on_failure="hold")
+        async def handle_visual(job: Job) -> None:
+            if job.payload is None:
+                raise ValueError("Visual job has no ID")
+            await asyncio.to_thread(index_visual, UUID(job.payload.decode("utf-8")))
 
         # PgQueuer reserves capacity for heartbeats; the entrypoint limit keeps
         # actual video processing at one job at a time.
@@ -331,8 +442,9 @@ def main() -> None:
     logging.basicConfig(level=logging.INFO)
     if args.download_models:
         download_models()
+        download_visual_model()
         load_embedder()
-        print("Pinned transcription and embedding models are ready.")
+        print("Pinned transcription, text, and visual models are ready.")
     else:
         try:
             asyncio.run(run_worker())

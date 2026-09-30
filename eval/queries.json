@@ -2,6 +2,7 @@
   "schema_version": 1,
   "label_method": "Twenty questions and relevant source-caption intervals were marked before inspecting any Prism search results. Intervals are seconds in the prepared evaluation video, not the original lecture timeline.",
   "split_rule": "Tune retrieval settings on development questions only; run the held-out questions once after settings are fixed.",
+  "corpus_ids": ["sql_connection", "css", "ajax", "tcp"],
   "queries": [
     {
       "id": "d1",
