@@ -10,6 +10,8 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from prism.config import get_settings
 from prism.db import engine
+from prism.playback import router as playback_router
+from prism.search import router as search_router
 from prism.uploads import UploadGuard, reconcile_uploads
 from prism.uploads import router as uploads_router
 
@@ -31,6 +33,8 @@ app.add_middleware(
     allow_headers=["Content-Type", "X-Prism-Request"],
 )
 app.include_router(uploads_router)
+app.include_router(search_router)
+app.include_router(playback_router)
 
 
 class Health(BaseModel):

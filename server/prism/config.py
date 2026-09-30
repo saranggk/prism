@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+psycopg://prism:prism@127.0.0.1:5432/prism"
     frontend_origin: str = "http://127.0.0.1:3000"
     data_dir: Path = PROJECT_ROOT / "data"
+    search_similarity_cutoff: float = 0.3  # Provisional until development labels exist.
 
     @property
     def storage_path(self) -> Path:

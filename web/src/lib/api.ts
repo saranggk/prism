@@ -1,14 +1,6 @@
-export type Video = {
-  id: string;
-  title: string;
-  duration_seconds: number;
-  status: "queued" | "processing" | "ready" | "failed";
-  current_step: string | null;
-  transcript_state: "present" | "none" | null;
-  error: string | null;
-  created_at: string;
-  updated_at: string;
-};
+import type { SearchResponse, Video } from "@/lib/api-types";
+
+export type { SearchResult, SearchResponse, Video } from "@/lib/api-types";
 
 const origin = process.env.NEXT_PUBLIC_API_ORIGIN ?? "http://127.0.0.1:8000";
 
@@ -17,6 +9,10 @@ function message(body: unknown, fallback: string): string {
     return body.detail;
   }
   return fallback;
+}
+
+export function mediaUrl(path: string): string {
+  return `${origin}${path}`;
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -28,6 +24,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export function listVideos(): Promise<Video[]> {
   return request<Video[]>("/videos");
+}
+
+export function searchVideos(query: string, videoIds: string[], signal?: AbortSignal): Promise<SearchResponse> {
+  const params = new URLSearchParams({ q: query });
+  for (const id of videoIds) params.append("video_ids", id);
+  return request<SearchResponse>(`/search?${params.toString()}`, { signal });
 }
 
 export function retryVideo(id: string): Promise<Video> {

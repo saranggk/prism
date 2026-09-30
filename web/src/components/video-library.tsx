@@ -3,14 +3,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { listVideos, retryVideo, uploadVideo, type Video } from "@/lib/api";
+import { SearchResults } from "@/components/search-results";
+import { formatTime } from "@/components/video-player";
 
 const MAX_BYTES = 500 * 1024 * 1024;
-
-function duration(seconds: number): string {
-  const minutes = Math.floor(seconds / 60);
-  const rest = Math.floor(seconds % 60);
-  return `${minutes}:${String(rest).padStart(2, "0")}`;
-}
 
 function statusText(video: Video): string {
   if (video.status === "queued") return "Queued — you can leave this page";
@@ -96,6 +92,7 @@ export function VideoLibrary() {
   }
 
   return (
+    <>
     <section className="library" aria-labelledby="library-title">
       <div className="library-heading">
         <div>
@@ -138,7 +135,7 @@ export function VideoLibrary() {
               <span className="video-icon" aria-hidden="true">▶</span>
               <div className="video-info">
                 <h3>{video.title}</h3>
-                <p>{duration(video.duration_seconds)} · Added {new Date(video.created_at).toLocaleDateString()}</p>
+                <p>{formatTime(video.duration_seconds)} · Added {new Date(video.created_at).toLocaleDateString()}</p>
                 {video.status === "failed" && video.error && <p className="video-error">{video.error}</p>}
               </div>
               <div className="video-state">
@@ -151,5 +148,7 @@ export function VideoLibrary() {
       </div>
       {listError && videos.length > 0 && <p className="inline-error" role="alert">{listError} <button type="button" onClick={() => { void refresh(); }}>Try again</button></p>}
     </section>
+    <SearchResults videos={videos} />
+    </>
   );
 }
