@@ -4,7 +4,7 @@ Find the moment you need in a video library.
 
 Prism is a local-first video research project. The first milestone is uploading a short tutorial, preparing timestamped transcripts and preview images, then searching and playing the matching moment.
 
-**Status:** under development. Upload, durable background processing, timestamped previews, and transcripts work locally. Search and timestamp playback are not yet available. No retrieval quality or performance results have been measured.
+**Status:** the local upload → process → transcript search → timestamp playback slice works. Search matches are provisional; visual search, clip collections, and the research agent are not built yet. [Real-media evaluation](eval/RESULTS.md) reports measured successes and misses.
 
 ## Stack
 
@@ -57,7 +57,7 @@ npm ci
 npm run dev
 ```
 
-Open <http://127.0.0.1:3000> to upload an English H.264 MP4 (up to 15 minutes or 500 MiB) and see its processing state. Suitable English captions are used first; otherwise audio is transcribed locally. A silent video becomes ready with previews and a “no transcript” label. The API health endpoint is <http://127.0.0.1:8000/health>. The checked-in `.env.example` lists optional local settings; defaults work with the Compose database.
+Open <http://127.0.0.1:3000> to upload an English H.264 MP4 (up to 15 minutes or 500 MiB) and see its processing state. Suitable English captions are used first; otherwise audio is transcribed locally. A silent video becomes ready with previews and a “no transcript” label. Search ready videos with a question, optionally narrow to selected videos, then open a result to play the original at the matching time. The API health endpoint is <http://127.0.0.1:8000/health>. The checked-in `.env.example` lists optional local settings; defaults work with the Compose database.
 
 Run `uv run ruff check .` from `server/`, and `npm run lint`, `npm run typecheck`, and `npm run build` from `web/` to check the current code.
 
@@ -69,4 +69,4 @@ Later milestones add visual and combined retrieval, frame/clip queries, saved co
 
 ## Evaluation
 
-Planned evaluation uses a small manually labeled tutorial corpus, with separate development and held-out queries. It will report retrieval quality, timestamp error, processing/search latency, and measured resource use. Test doubles will be distinguished from real-model runs. Video files and model caches are not committed.
+The [evaluation report](eval/RESULTS.md) describes four real tutorials, 20 pre-labeled questions, retrieval quality, timestamp error, and local processing/search timings. It explains how to rerun the scorer and where the first model fails. CI runs deterministic behavior tests; real media and model caches are kept out of Git.
