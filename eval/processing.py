@@ -53,9 +53,7 @@ def measure(map_path: Path, output: Path) -> dict:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--map-path", type=Path, default=DEFAULT_MAP)
-    parser.add_argument(
-        "--output", type=Path, default=ROOT / "data" / "eval" / "processing.json"
-    )
+    parser.add_argument("--output", type=Path, default=ROOT / "data" / "eval" / "processing.json")
     args = parser.parse_args()
     measure(args.map_path, args.output)
 

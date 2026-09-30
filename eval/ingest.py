@@ -27,9 +27,7 @@ def checksum(path: Path) -> str:
 def save_map(path: Path, mapping: dict[str, str]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(path.suffix + ".tmp")
-    temporary.write_text(
-        json.dumps(mapping, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-    )
+    temporary.write_text(json.dumps(mapping, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     temporary.replace(path)
 
 
@@ -44,22 +42,16 @@ def ingest(api_origin: str, map_path: Path, wait_seconds: int) -> dict[str, str]
         for item in videos:
             path = ROOT / item["local_path"]
             if not path.is_file():
-                raise FileNotFoundError(
-                    f"Missing {path}; see eval/corpus.json for its source."
-                )
+                raise FileNotFoundError(f"Missing {path}; see eval/corpus.json for its source.")
             if checksum(path) != item["sha256"]:
-                raise ValueError(
-                    f"Checksum mismatch for {path}; this is not the labeled media."
-                )
+                raise ValueError(f"Checksum mismatch for {path}; this is not the labeled media.")
 
             existing = mapping.get(item["id"])
             if existing:
                 response = client.get(f"/videos/{existing}")
                 if response.status_code == 200:
                     if response.json()["title"] != path.stem:
-                        raise ValueError(
-                            f"Video map points {item['id']} to another upload."
-                        )
+                        raise ValueError(f"Video map points {item['id']} to another upload.")
                     print(f"{item['id']}: existing {existing}")
                     continue
                 if response.status_code != 404:
@@ -84,9 +76,7 @@ def ingest(api_origin: str, map_path: Path, wait_seconds: int) -> dict[str, str]
                 response.raise_for_status()
                 statuses[name] = response.json()
             failures = {
-                name: row["error"]
-                for name, row in statuses.items()
-                if row["status"] == "failed"
+                name: row["error"] for name, row in statuses.items() if row["status"] == "failed"
             }
             if failures:
                 raise RuntimeError(f"Processing failed: {failures}")

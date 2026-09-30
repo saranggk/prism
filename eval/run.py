@@ -13,6 +13,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import httpx
+
 from prism.evaluate import Interval, score_case, summarize
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -20,9 +21,7 @@ QUERIES = ROOT / "eval" / "queries.json"
 DEFAULT_MAP = ROOT / "data" / "eval" / "video-map.json"
 
 
-def run(
-    api_origin: str, split: str, map_path: Path, output: Path, repeats: int = 1
-) -> dict:
+def run(api_origin: str, split: str, map_path: Path, output: Path, repeats: int = 1) -> dict:
     if repeats < 1:
         raise ValueError("repeats must be at least one")
     queries = json.loads(QUERIES.read_text(encoding="utf-8"))["queries"]
@@ -45,9 +44,7 @@ def run(
             filters = query["video_filter_ids"]
             # Even an unfiltered corpus question excludes unrelated local uploads.
             scoped_ids = filters or list(mapping)
-            params = [("q", query["query"])] + [
-                ("video_ids", mapping[name]) for name in scoped_ids
-            ]
+            params = [("q", query["query"])] + [("video_ids", mapping[name]) for name in scoped_ids]
             latencies = []
             for repeat in range(repeats):
                 started = time.perf_counter()
@@ -128,9 +125,7 @@ def main() -> None:
     parser.add_argument("split", choices=["development", "held_out"])
     parser.add_argument("--api-origin", default="http://127.0.0.1:8000")
     parser.add_argument("--map-path", type=Path, default=DEFAULT_MAP)
-    parser.add_argument(
-        "--repeats", type=int, help="Defaults to 1 for dev, 3 for held-out"
-    )
+    parser.add_argument("--repeats", type=int, help="Defaults to 1 for dev, 3 for held-out")
     parser.add_argument(
         "--output",
         type=Path,
@@ -138,11 +133,7 @@ def main() -> None:
     )
     args = parser.parse_args()
     output = args.output or ROOT / "data" / "eval" / f"{args.split}-run.json"
-    repeats = (
-        args.repeats
-        if args.repeats is not None
-        else (3 if args.split == "held_out" else 1)
-    )
+    repeats = args.repeats if args.repeats is not None else (3 if args.split == "held_out" else 1)
     run(args.api_origin, args.split, args.map_path, output, repeats)
 
 
