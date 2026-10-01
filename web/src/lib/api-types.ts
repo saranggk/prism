@@ -39,3 +39,18 @@ export type SearchResponse = {
   video_results?: Array<VideoResult>;
   provisional?: boolean;
 };
+
+export type VisualQueryResult = {
+  video_id: string;
+  video_title: string;
+  frame_time_seconds: number;
+  frame_url: string;
+  playback_url: string;
+  query_time_seconds: number;
+};
+
+export type VisualQueryResponse = {
+  state: "results" | "no_searchable_videos" | "no_matches";
+  results: Array<VisualQueryResult>;
+  skipped_videos: Array<string>;
+};

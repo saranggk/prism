@@ -2,22 +2,23 @@
 
 import { useRef, useState } from "react";
 
-import { mediaUrl, type SearchResult, type VideoResult } from "@/lib/api";
+import { mediaUrl, type SearchResult, type VideoResult, type VisualQueryResult } from "@/lib/api";
 
 export function formatTime(seconds: number): string {
   const whole = Math.floor(Math.max(0, seconds));
   return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, "0")}`;
 }
 
-export function VideoPlayer({ result }: { result: SearchResult | VideoResult }) {
+export function VideoPlayer({ result }: { result: SearchResult | VideoResult | VisualQueryResult }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [playBlocked, setPlayBlocked] = useState(false);
   const [mediaError, setMediaError] = useState(false);
+  const visual = "frame_time_seconds" in result ? result : null;
   const moment = "start_seconds" in result ? result : null;
-  const matchTime = moment?.evidence.includes("frame") && !moment.evidence.includes("transcript")
+  const matchTime = visual ? visual.frame_time_seconds : moment?.evidence.includes("frame") && !moment.evidence.includes("transcript")
     ? moment.preview_time_seconds ?? moment.start_seconds
     : moment?.start_seconds ?? 0;
-  const seekTo = Math.max(0, matchTime - 3);
+  const seekTo = Math.max(0, matchTime - (visual ? 0 : 3));
 
   function onMetadata() {
     const video = videoRef.current;
@@ -33,12 +34,12 @@ export function VideoPlayer({ result }: { result: SearchResult | VideoResult }) 
           <p className="eyebrow">NOW PLAYING</p>
           <h3>{result.video_title}</h3>
         </div>
-        <span>{moment ? moment.evidence.includes("frame") && !moment.evidence.includes("transcript") ? "Frame" : "Moment" : "Video title"} {formatTime(moment?.start_seconds ?? 0)}{moment && moment.end_seconds > moment.start_seconds ? `–${formatTime(moment.end_seconds)}` : ""}</span>
+        <span>{visual ? "Visual match" : moment ? moment.evidence.includes("frame") && !moment.evidence.includes("transcript") ? "Frame" : "Moment" : "Video title"} {formatTime(visual?.frame_time_seconds ?? moment?.start_seconds ?? 0)}{moment && moment.end_seconds > moment.start_seconds ? `–${formatTime(moment.end_seconds)}` : ""}</span>
       </div>
       <video ref={videoRef} controls playsInline preload="metadata" src={mediaUrl(result.playback_url)}
         onLoadedMetadata={onMetadata} onError={() => setMediaError(true)}
         aria-label={`${result.video_title} video`} />
-      <p className="player-context">Starts at {formatTime(seekTo)} with up to three seconds of context. Playback continues normally.</p>
+      <p className="player-context">Starts at {formatTime(seekTo)}{visual ? " on the matched frame." : " with up to three seconds of context."} Playback continues normally.</p>
       {playBlocked && <p className="player-note" role="status">Ready at the selected moment. Press Play to continue.</p>}
       {mediaError && <p className="inline-error" role="alert">The original video could not be loaded.</p>}
     </section>

@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { mediaUrl, searchVideos, type SearchMode, type SearchResponse, type SearchResult, type Video, type VideoResult } from "@/lib/api";
 import { formatTime, VideoPlayer } from "@/components/video-player";
+import { VisualQueryPanel } from "@/components/visual-query-panel";
 
 export function SearchResults({ videos }: { videos: Video[] }) {
   const [query, setQuery] = useState("");
@@ -88,6 +89,7 @@ export function SearchResults({ videos }: { videos: Video[] }) {
           }} />
         <button type="submit" disabled={loading || searchable.length === 0}>Search <span aria-hidden="true">↗</span></button>
       </form>
+      <VisualQueryPanel key={selectedIds.join(":")} videos={searchable} selectedIds={selectedIds} />
       <fieldset className="source-filters">
         <legend>Evidence to search</legend>
         {([["combined", "All evidence"], ["transcript", "Transcript"], ["visual", "Frames"]] as const).map(([value, label]) =>

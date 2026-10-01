@@ -1,6 +1,6 @@
 import type { SearchResponse, Video } from "@/lib/api-types";
 
-export type { SearchResult, SearchResponse, Video, VideoResult } from "@/lib/api-types";
+export type { SearchResult, SearchResponse, Video, VideoResult, VisualQueryResult, VisualQueryResponse } from "@/lib/api-types";
 
 const origin = process.env.NEXT_PUBLIC_API_ORIGIN ?? "http://127.0.0.1:8000";
 
@@ -32,6 +32,19 @@ export function searchVideos(query: string, videoIds: string[], mode: SearchMode
   const params = new URLSearchParams({ q: query, mode });
   for (const id of videoIds) params.append("video_ids", id);
   return request<SearchResponse>(`/search?${params.toString()}`, { signal });
+}
+
+export async function searchVisual(file: File, videoIds: string[], signal?: AbortSignal): Promise<import("@/lib/api-types").VisualQueryResponse> {
+  const params = new URLSearchParams();
+  for (const id of videoIds) params.append("video_ids", id);
+  const form = new FormData();
+  form.append("file", file);
+  const response = await fetch(`${origin}/search/visual?${params.toString()}`, {
+    method: "POST", headers: { "X-Prism-Request": "1" }, body: form, signal,
+  });
+  const body: unknown = await response.json();
+  if (!response.ok) throw new Error(message(body, `Visual search failed (${response.status}).`));
+  return body as import("@/lib/api-types").VisualQueryResponse;
 }
 
 export function retryVideo(id: string): Promise<Video> {

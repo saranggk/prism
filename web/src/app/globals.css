@@ -91,6 +91,17 @@ button:disabled { opacity: .65; cursor: wait; }
 .search-form button { min-width: 115px; color: white; background: #535fb0; border-color: #535fb0; font-size: 13px; font-weight: 600; }
 .search-form button:hover:enabled { color: white; background: #414b94; border-color: #414b94; }
 .search-form button span { margin-left: 8px; }
+.visual-query { margin-top: 25px; padding: 22px; border: 1px solid #dfe3ee; border-radius: 10px; background: #f8f9fd; }
+.visual-query-heading h3 { margin: 0; font-size: 16px; }
+.visual-query-heading p { margin: 8px 0 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.visual-query-form { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 17px; }
+.visual-query-form label { font-size: 12px; font-weight: 600; }
+.visual-query-form input { max-width: 100%; font-size: 12px; }
+.visual-query-form span { color: var(--muted); font-size: 11px; }
+.visual-query-form button { margin-left: auto; background: #535fb0; color: white; font-size: 12px; }
+.visual-query-preview { margin-top: 17px; }
+.visual-query-preview p { margin: 0 0 8px; color: var(--muted); font-size: 11px; }
+.visual-query-preview img, .visual-query-preview video { display: block; width: min(100%, 480px); max-height: 250px; object-fit: contain; background: #e9ecf3; border-radius: 7px; }
 .source-filters { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin: 18px 0 0; padding: 0; border: 0; }
 .source-filters legend { margin-bottom: 8px; color: #424b5e; font-size: 12px; font-weight: 600; }
 .source-filters label { display: inline-flex; align-items: center; gap: 6px; color: #515d71; font-size: 12px; cursor: pointer; }
@@ -155,6 +166,8 @@ button:disabled { opacity: .65; cursor: wait; }
   .search-section { padding: 23px; }
   .search-form { flex-direction: column; }
   .search-form button { width: 100%; }
+  .visual-query-form { align-items: stretch; flex-direction: column; }
+  .visual-query-form button { margin-left: 0; }
   .results-heading { flex-direction: column; gap: 6px; }
   .results-heading p { text-align: left; }
   .results-grid { grid-template-columns: 1fr; }
