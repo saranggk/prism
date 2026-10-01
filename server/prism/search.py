@@ -228,7 +228,8 @@ def search(
     for rank, row in enumerate(frame_rows, 1):
         add_candidate(1 / (60 + rank), _candidate(row, frame=True))
     if mode == "combined":
-        chosen = merged[:5] + merged[transcript_count : transcript_count + 5]
+        chosen = merged[: min(5, transcript_count)]
+        chosen += merged[transcript_count : transcript_count + 5]
         chosen += merged[5:transcript_count][: 10 - len(chosen)]
     else:
         chosen = merged[:10]

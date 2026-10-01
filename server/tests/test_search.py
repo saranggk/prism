@@ -133,6 +133,7 @@ def test_visual_search_finds_silent_frame_and_keeps_title_match_separate(api, mo
 
     payload = client.get("/search", params={"q": "database connection"}).json()
     assert payload["state"] == "results"
+    assert len(payload["results"]) == 1
     assert payload["results"][0]["evidence"] == ["frame"]
     assert payload["results"][0]["excerpt"] is None
     assert payload["results"][0]["preview_time_seconds"] == 4
