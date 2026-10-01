@@ -4,7 +4,7 @@ Find the moment you need in a video library.
 
 Prism is a local-first video research project. Upload a short tutorial or product demo, prepare timestamped transcripts and representative frames, then search and play a matching moment.
 
-**Status:** the local upload → process → combined transcript/frame/title search → timestamp playback slice works. Search matches are provisional; frame and clip uploads, collections, and the research agent are not built yet. [Real-media evaluation](eval/RESULTS.md) reports measured successes and misses.
+**Status:** the local upload → process → combined search → timestamp playback slice works. Image and short clip queries can now find visually similar sampled frames in ready videos. Matches are provisional; collections and the research agent are not built yet. [Real-media evaluation](eval/RESULTS.md) reports measured successes and misses.
 
 ## Stack
 
@@ -57,16 +57,16 @@ npm ci
 npm run dev
 ```
 
-Open <http://127.0.0.1:3000> to upload an English H.264 MP4 (up to 15 minutes or 500 MiB) and see its processing state. Suitable English captions are used first; otherwise audio is transcribed locally. A silent video becomes ready with previews and a “no transcript” label. Visual indexing runs separately, so ready transcript search remains available while its frames are indexed. Failed visual indexing can be retried from the library. Search ready videos with a question, optionally narrow to selected videos or an evidence source, then open a moment to play the original at its timestamp. Frame matches show the sampled frame; title-only matches appear separately at video level. The API health endpoint is <http://127.0.0.1:8000/health>. The checked-in `.env.example` lists optional local settings; defaults work with the Compose database.
+Open <http://127.0.0.1:3000> to upload an English H.264 MP4 (up to 15 minutes or 500 MiB) and see its processing state. Suitable English captions are used first; otherwise audio is transcribed locally. A silent video becomes ready with previews and a “no transcript” label. Visual indexing runs separately, so ready transcript search remains available while its frames are indexed. Failed visual indexing can be retried from the library. Search ready videos with a question or provide a JPEG, PNG, or MP4 clip up to 30 seconds and 60 MiB. Video filters apply to both searches. Image and clip queries are processed locally and discarded after the request; results show the matching indexed frame and play from its timestamp. Clip search compares up to 16 sampled views, not motion or sequence. The API health endpoint is <http://127.0.0.1:8000/health>. The checked-in `.env.example` lists optional local settings; defaults work with the Compose database.
 
 Run `uv run ruff check .` from `server/`, and `npm run lint`, `npm run typecheck`, and `npm run build` from `web/` to check the current code.
 
 ## Scope
 
-The current local slice supports short English MP4 tutorials and demos, transcript and representative-frame search across a library or selected videos, title matches, and timestamped playback. Frames are sampled about every five seconds, so brief visual actions can be missed. A nearby preview provides context unless the result explicitly labels it as a frame match.
+The current local slice supports short English MP4 tutorials and demos, text and image/clip queries across a library or selected videos, title matches, and timestamped playback. Library frames are sampled about every five seconds, so brief visual actions can be missed. A visually similar frame does not verify UI text, an action, or the order of events in a clip. A nearby preview provides context unless the result explicitly labels it as a frame match.
 
-Later milestones add frame/clip queries, saved collections, and an agent that assembles sourced clips. A hosted demo follows a working local version.
+Later milestones add saved collections and an agent that assembles sourced clips. A hosted demo follows a working local version.
 
 ## Evaluation
 
-The [evaluation report](eval/RESULTS.md) describes four real tutorials and a product demo, pre-labeled transcript and visual questions, retrieval quality, timestamp error, and local processing/search timings. It explains where visual search misses text-heavy interface steps and how to rerun the scorer. CI runs deterministic behavior tests; real media and model caches are kept out of Git.
+The [evaluation report](eval/RESULTS.md) describes four real tutorials and a product demo, pre-labeled transcript, visual text, image, and clip queries, retrieval quality, timestamp error, and local timings. It explains the limits of the small source-derived image and clip set and how to rerun it. Real media and model caches are kept out of Git.

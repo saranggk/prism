@@ -2,11 +2,13 @@
 
 from functools import lru_cache
 from pathlib import Path
+from threading import Lock
 
 from prism.config import get_settings
 
 MODEL_REPO = "sentence-transformers/clip-ViT-B-32"
 MODEL_REVISION = "dbd2f229c483b7806e8067631d89cb9ca5287f2a"
+MODEL_LOCK = Lock()
 
 
 @lru_cache(maxsize=1)

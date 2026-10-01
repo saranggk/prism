@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "label_method": "Query images and clips are extracted from the licensed source videos at the times below. Visible states and relevant intervals were labeled from the source media before Prism image/clip retrieval was run. This tests source-derived near-duplicate views, not cross-source generalization.",
+  "split_rule": "Choose an image similarity cutoff on development only. Run held_out once after fixing the setting.",
+  "cases": [
+    {"id": "iqd1", "split": "development", "kind": "image", "source_id": "open_digital_mentor", "at_seconds": 10.5, "filter_ids": ["open_digital_mentor"], "relevant": [{"video_id": "open_digital_mentor", "start_seconds": 8, "end_seconds": 17}], "visible_state": "Mentor avatar and cited answer panel"},
+    {"id": "cqd1", "split": "development", "kind": "clip", "source_id": "open_digital_mentor", "at_seconds": 19, "duration_seconds": 8, "filter_ids": ["open_digital_mentor"], "relevant": [{"video_id": "open_digital_mentor", "start_seconds": 18, "end_seconds": 36}], "visible_state": "Mentor avatar beside orange warning panel"},
+    {"id": "iqd2", "split": "development", "kind": "image", "source_id": "css", "at_seconds": 230, "filter_ids": ["css"], "relevant": [{"video_id": "css", "start_seconds": 220, "end_seconds": 250}], "visible_state": "Presenter beside common CSS properties slide"},
+    {"id": "iqd3", "split": "development", "kind": "image", "source_id": "css", "at_seconds": 230, "filter_ids": ["open_digital_mentor"], "relevant": [], "visible_state": "CSS slide excluded by the selected product demo"},
+    {"id": "iqh1", "split": "held_out", "kind": "image", "source_id": "open_digital_mentor", "at_seconds": 38.5, "filter_ids": ["open_digital_mentor"], "relevant": [{"video_id": "open_digital_mentor", "start_seconds": 36, "end_seconds": 42}], "visible_state": "Blue asset attribution card"},
+    {"id": "iqh2", "split": "held_out", "kind": "image", "source_id": "ajax", "at_seconds": 310, "filter_ids": ["ajax"], "relevant": [{"video_id": "ajax", "start_seconds": 300, "end_seconds": 320}], "visible_state": "Presenter beside XMLHttpRequest properties slide"},
+    {"id": "cqh1", "split": "held_out", "kind": "clip", "source_id": "ajax", "at_seconds": 304, "duration_seconds": 10, "filter_ids": ["ajax"], "relevant": [{"video_id": "ajax", "start_seconds": 300, "end_seconds": 320}], "visible_state": "AJAX properties slide during explanation"},
+    {"id": "iqh3", "split": "held_out", "kind": "image", "source_id": "open_digital_mentor", "at_seconds": 38.5, "filter_ids": ["css"], "relevant": [], "visible_state": "Credits card excluded by the selected CSS video"}
+  ]
+}

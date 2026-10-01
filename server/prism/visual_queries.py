@@ -3,7 +3,6 @@
 import math
 import subprocess
 import tempfile
-import threading
 from pathlib import Path
 from typing import Annotated, Literal
 from uuid import UUID
@@ -15,10 +14,9 @@ from pydantic import BaseModel
 
 from prism.config import get_settings
 from prism.jobs import connect
-from prism.visual import MODEL_REVISION, load_visual_model
+from prism.visual import MODEL_LOCK, MODEL_REVISION, load_visual_model
 
 router = APIRouter()
-_model_lock = threading.Lock()
 MAX_QUERY_BYTES = 60 * 1024 * 1024
 MAX_CLIP_SECONDS = 30
 MAX_IMAGE_PIXELS = 25_000_000
@@ -158,7 +156,7 @@ def visual_query(
         _read_upload(file, path)
         samples = _clip_frames(path, Path(temp)) if suffix == ".mp4" else [(0.0, _image(path))]
         try:
-            with _model_lock:
+            with MODEL_LOCK:
                 vectors = load_visual_model().encode(
                     [image for _, image in samples],
                     normalize_embeddings=True,
@@ -197,7 +195,7 @@ def visual_query(
     ):
         if any(
             item.video_id == row["video_id"]
-            and abs(item.frame_time_seconds - row["time_seconds"]) < 5
+            and abs(item.frame_time_seconds - row["time_seconds"]) < 8
             for item in results
         ):
             continue

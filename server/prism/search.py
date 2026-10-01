@@ -14,12 +14,11 @@ from pydantic import BaseModel
 from prism.config import get_settings
 from prism.jobs import connect
 from prism.transcripts import load_embedder
+from prism.visual import MODEL_LOCK, embed_query
 from prism.visual import MODEL_REVISION as VISUAL_REVISION
-from prism.visual import embed_query
 
 router = APIRouter()
 _text_lock = threading.Lock()
-_visual_lock = threading.Lock()
 STOPWORDS = {
     "a",
     "an",
@@ -166,7 +165,7 @@ def search(
             ).fetchall()
         frame_rows = []
         if has_visual:
-            with _visual_lock:
+            with MODEL_LOCK:
                 vector = embed_query(query)
             if not all(math.isfinite(float(value)) for value in vector):
                 raise HTTPException(
