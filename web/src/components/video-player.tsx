@@ -15,9 +15,16 @@ export function VideoPlayer({ result }: { result: SearchResult | VideoResult | V
   const [mediaError, setMediaError] = useState(false);
   const visual = "frame_time_seconds" in result ? result : null;
   const moment = "start_seconds" in result ? result : null;
-  const matchTime = visual ? visual.frame_time_seconds : moment?.evidence.includes("frame") && !moment.evidence.includes("transcript")
-    ? moment.preview_time_seconds ?? moment.start_seconds
-    : moment?.start_seconds ?? 0;
+  const frameOnly = moment?.evidence.includes("frame") && !moment.evidence.includes("transcript");
+  let matchTime = 0;
+  let label = "Video title";
+  if (visual) {
+    matchTime = visual.frame_time_seconds;
+    label = "Visual match";
+  } else if (moment) {
+    matchTime = frameOnly ? moment.preview_time_seconds ?? moment.start_seconds : moment.start_seconds;
+    label = frameOnly ? "Frame" : "Moment";
+  }
   const seekTo = Math.max(0, matchTime - (visual ? 0 : 3));
 
   function onMetadata() {
@@ -34,7 +41,7 @@ export function VideoPlayer({ result }: { result: SearchResult | VideoResult | V
           <p className="eyebrow">NOW PLAYING</p>
           <h3>{result.video_title}</h3>
         </div>
-        <span>{visual ? "Visual match" : moment ? moment.evidence.includes("frame") && !moment.evidence.includes("transcript") ? "Frame" : "Moment" : "Video title"} {formatTime(visual?.frame_time_seconds ?? moment?.start_seconds ?? 0)}{moment && moment.end_seconds > moment.start_seconds ? `–${formatTime(moment.end_seconds)}` : ""}</span>
+        <span>{label} {formatTime(visual?.frame_time_seconds ?? moment?.start_seconds ?? 0)}{moment && moment.end_seconds > moment.start_seconds ? `–${formatTime(moment.end_seconds)}` : ""}</span>
       </div>
       <video ref={videoRef} controls playsInline preload="metadata" src={mediaUrl(result.playback_url)}
         onLoadedMetadata={onMetadata} onError={() => setMediaError(true)}

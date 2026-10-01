@@ -30,6 +30,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 MAX_FILE_BYTES = 500 * 1024 * 1024
 MAX_REQUEST_BYTES = 501 * 1024 * 1024
+MAX_VISUAL_REQUEST_BYTES = 61 * 1024 * 1024
 MAX_DURATION_SECONDS = 900
 
 
@@ -55,15 +56,17 @@ class UploadGuard:
                 scope, receive, send
             )
             return
-        if scope["path"] != "/videos" or scope["method"] != "POST":
+        if scope["method"] != "POST" or scope["path"] not in {"/videos", "/search/visual"}:
             await self.app(scope, receive, send)
             return
+        visual_query = scope["path"] == "/search/visual"
+        limit = MAX_VISUAL_REQUEST_BYTES if visual_query else MAX_REQUEST_BYTES
         try:
             content_length = int(headers.get(b"content-length", b"0"))
         except ValueError:
             content_length = 0
-        if content_length > MAX_REQUEST_BYTES:
-            await self._too_large(scope, receive, send)
+        if content_length > limit:
+            await self._too_large(scope, receive, send, visual_query)
             return
         # Consume into a disk-backed file first. The application never sees a partial
         # multipart request or a false Content-Length that hides an over-limit body.
@@ -75,8 +78,8 @@ class UploadGuard:
                     return
                 chunk = message.get("body", b"")
                 size += len(chunk)
-                if size > MAX_REQUEST_BYTES:
-                    await self._too_large(scope, receive, send)
+                if size > limit:
+                    await self._too_large(scope, receive, send, visual_query)
                     return
                 body.write(chunk)
                 if not message.get("more_body", False):
@@ -90,10 +93,13 @@ class UploadGuard:
             await self.app(scope, replay, send)
 
     @staticmethod
-    async def _too_large(scope, receive, send):
-        await JSONResponse({"detail": "Upload exceeds the 500 MiB video limit."}, status_code=413)(
-            scope, receive, send
+    async def _too_large(scope, receive, send, visual_query=False):
+        detail = (
+            "Query upload exceeds the 60 MiB file limit."
+            if visual_query
+            else "Upload exceeds the 500 MiB video limit."
         )
+        await JSONResponse({"detail": detail}, status_code=413)(scope, receive, send)
 
 
 def _probe(path: Path) -> float:

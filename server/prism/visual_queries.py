@@ -145,9 +145,6 @@ def visual_query(
             (selected or None, selected or None),
         ).fetchall()
     skipped = [row["title"] for row in videos if row["visual_state"] != "ready"]
-    if not any(row["visual_state"] == "ready" for row in videos):
-        return VisualQueryResponse(state="no_searchable_videos", results=[], skipped_videos=skipped)
-
     suffix = Path(file.filename or "").suffix.lower()
     if suffix not in {".jpg", ".jpeg", ".png", ".mp4"}:
         raise HTTPException(status_code=422, detail="Use a JPEG, PNG, or MP4 file.")
@@ -155,6 +152,12 @@ def visual_query(
         path = Path(temp) / f"query{suffix}"
         _read_upload(file, path)
         samples = _clip_frames(path, Path(temp)) if suffix == ".mp4" else [(0.0, _image(path))]
+        if not any(row["visual_state"] == "ready" for row in videos):
+            for _, image in samples:
+                image.close()
+            return VisualQueryResponse(
+                state="no_searchable_videos", results=[], skipped_videos=skipped
+            )
         try:
             with MODEL_LOCK:
                 vectors = load_visual_model().encode(
@@ -178,15 +181,27 @@ def visual_query(
                     status_code=503, detail="Visual model returned an invalid embedding."
                 )
             rows = db.execute(
-                "SELECT f.video_id, v.title, f.ordinal, f.time_seconds, "
-                "f.embedding <=> %s AS distance FROM frames AS f "
-                "JOIN videos AS v ON v.id = f.video_id "
+                "WITH ranked AS (SELECT f.video_id, v.title, f.ordinal, f.time_seconds, "
+                "f.embedding <=> %s AS distance, "
+                "row_number() OVER (PARTITION BY f.video_id, floor(f.time_seconds / 8.0) "
+                "ORDER BY f.embedding <=> %s, f.ordinal) AS nearby_rank "
+                "FROM frames AS f JOIN videos AS v ON v.id = f.video_id "
                 "WHERE v.status = 'ready' AND v.visual_state = 'ready' "
                 "AND f.model_revision = %s AND f.embedding IS NOT NULL "
                 "AND (%s::uuid[] IS NULL OR f.video_id = ANY(%s::uuid[])) "
-                "AND f.embedding <=> %s <= %s "
-                "ORDER BY distance, f.video_id, f.ordinal LIMIT 20",
-                (vector, MODEL_REVISION, selected or None, selected or None, vector, 1 - cutoff),
+                "AND f.embedding <=> %s <= %s) "
+                "SELECT video_id, title, ordinal, time_seconds, distance FROM ranked "
+                "WHERE nearby_rank = 1 "
+                "ORDER BY distance, video_id, ordinal LIMIT 100",
+                (
+                    vector,
+                    vector,
+                    MODEL_REVISION,
+                    selected or None,
+                    selected or None,
+                    vector,
+                    1 - cutoff,
+                ),
             ).fetchall()
             candidates.extend((row["distance"], query_time, row) for row in rows)
     results = []

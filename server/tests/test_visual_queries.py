@@ -2,6 +2,7 @@
 
 import io
 import os
+import subprocess
 from uuid import uuid4
 
 import numpy as np
@@ -83,6 +84,36 @@ def test_image_query_filters_and_collapses_nearby_frames(api, monkeypatch):
     assert str(second) not in str(body)
 
 
+def test_dense_scene_does_not_hide_another_video(api, monkeypatch):
+    from prism import visual_queries
+
+    client, tmp_path = api
+    monkeypatch.setattr(visual_queries, "load_visual_model", ImageModel)
+    first = seed(tmp_path)
+    second = seed(tmp_path)
+    with psycopg.connect(os.environ["PRISM_TEST_DATABASE_URL"].replace("+psycopg", "")) as db:
+        for ordinal in range(3, 33):
+            db.execute(
+                "INSERT INTO frames (video_id, ordinal, time_seconds, path, embedding, "
+                "model_revision) VALUES (%s, %s, %s, %s, %s::vector, %s)",
+                (
+                    first,
+                    ordinal,
+                    4 + ordinal / 100,
+                    str(tmp_path / f"dense-{ordinal}.jpg"),
+                    "[1," + "0," * 510 + "0]",
+                    MODEL_REVISION,
+                ),
+            )
+    response = client.post(
+        "/search/visual",
+        files={"file": ("query.png", image_bytes(), "image/png")},
+        headers={"X-Prism-Request": "1"},
+    )
+    assert response.status_code == 200
+    assert {item["video_id"] for item in response.json()["results"]} == {str(first), str(second)}
+
+
 def test_image_query_validation_and_empty_states(api, monkeypatch):
     from prism import visual_queries
 
@@ -96,6 +127,12 @@ def test_image_query_validation_and_empty_states(api, monkeypatch):
     )
     assert response.json()["state"] == "no_searchable_videos"
     assert response.json()["skipped_videos"] == [f"Video {pending}"]
+    invalid_before_indexing = client.post(
+        "/search/visual",
+        files={"file": ("bad.png", b"bad")},
+        headers={"X-Prism-Request": "1"},
+    )
+    assert invalid_before_indexing.status_code == 422
     seed(tmp_path)
     for name, content in (("query.txt", b"bad"), ("query.png", b"bad"), ("query.png", b"")):
         response = client.post(
@@ -135,3 +172,71 @@ def test_clip_query_reports_sample_time_and_rejects_bad_clip(api, sample_mp4, mo
         headers={"X-Prism-Request": "1"},
     )
     assert invalid.status_code == 422
+
+
+def test_later_clip_sample_can_support_match(api, tmp_path, monkeypatch):
+    from prism import visual_queries
+
+    class ColorModel:
+        def encode(self, images, **kwargs):
+            vectors = []
+            for image in images:
+                red, _, blue = image.getpixel((image.width // 2, image.height // 2))
+                vector = np.zeros(512, dtype=np.float32)
+                vector[0 if blue > red else 1] = 1
+                vectors.append(vector)
+            return np.array(vectors)
+
+    client, storage = api
+    monkeypatch.setattr(visual_queries, "load_visual_model", ColorModel)
+    video_id = seed(storage)
+    clip = tmp_path / "two-views.mp4"
+    subprocess.run(
+        [
+            "ffmpeg",
+            "-v",
+            "error",
+            "-f",
+            "lavfi",
+            "-i",
+            "color=c=red:s=64x64:r=10:d=2",
+            "-f",
+            "lavfi",
+            "-i",
+            "color=c=blue:s=64x64:r=10:d=2",
+            "-filter_complex",
+            "[0:v][1:v]concat=n=2:v=1:a=0",
+            "-c:v",
+            "libx264",
+            "-pix_fmt",
+            "yuv420p",
+            "-y",
+            str(clip),
+        ],
+        check=True,
+        timeout=20,
+    )
+    response = client.post(
+        "/search/visual",
+        files={"file": ("two-views.mp4", clip.read_bytes(), "video/mp4")},
+        headers={"X-Prism-Request": "1"},
+    )
+    assert response.status_code == 200
+    first = response.json()["results"][0]
+    assert first["video_id"] == str(video_id)
+    assert first["query_time_seconds"] == 2
+    assert first["frame_time_seconds"] == 4
+
+
+def test_visual_request_limit_applies_before_multipart_parsing(api, monkeypatch):
+    from prism import uploads
+
+    client, _ = api
+    monkeypatch.setattr(uploads, "MAX_VISUAL_REQUEST_BYTES", 100)
+    response = client.post(
+        "/search/visual",
+        files={"file": ("query.png", image_bytes(), "image/png")},
+        headers={"X-Prism-Request": "1", "Content-Length": "1"},
+    )
+    assert response.status_code == 413
+    assert response.json()["detail"] == "Query upload exceeds the 60 MiB file limit."

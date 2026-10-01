@@ -10,6 +10,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import httpx
+
 from prism.evaluate import Interval, score_case, summarize
 
 ROOT = Path(__file__).resolve().parents[1]

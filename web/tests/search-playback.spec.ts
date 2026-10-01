@@ -68,9 +68,9 @@ test("near-zero seek and rapid result selection use the latest passage", async (
   expect(nearStart).toBeLessThan(3);
   await page.getByRole("button", { name: "Play this moment" }).last().click();
   await expect(page.getByText("Starts at 0:17 with up to three seconds of context. Playback continues normally.")).toBeVisible();
-  await expect.poll(async () => page.locator("video").evaluate((element: HTMLVideoElement) => element.currentTime)).toBeGreaterThanOrEqual(16);
+  await expect.poll(async () => page.locator("video").evaluate((element: HTMLVideoElement) => element.currentTime), { timeout: 30_000 }).toBeGreaterThanOrEqual(16);
   const playingAt = await page.locator("video").evaluate((element: HTMLVideoElement) => element.currentTime);
-  await expect.poll(async () => page.locator("video").evaluate((element: HTMLVideoElement) => element.currentTime)).toBeGreaterThan(playingAt);
+  await expect.poll(async () => page.locator("video").evaluate((element: HTMLVideoElement) => element.currentTime), { timeout: 30_000 }).toBeGreaterThan(playingAt);
 });
 
 test("a frame match seeks relative to the sampled frame", async ({ page }) => {

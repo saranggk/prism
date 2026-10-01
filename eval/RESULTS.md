@@ -1,8 +1,8 @@
 # Retrieval evaluation
 
 The first section preserves the local, real-model **transcript-only** baseline
-from Prism's first vertical slice. The second section measures combined
-retrieval. Frame/clip uploads and the research agent remain future work.
+from Prism's first vertical slice. Later sections measure combined retrieval
+and image/clip queries. Collections and the research agent remain future work.
 Raw run output stays in ignored `data/eval/`.
 
 ## Corpus and method
@@ -194,21 +194,21 @@ treated as untouched again.
 
 Prism now accepts local JPEG/PNG images and MP4 clips up to 30 seconds and 60 MiB. It embeds the image or up to 16 sampled clip views with the pinned CLIP model and compares them with already indexed library frames. Query media is temporary. These results are similar appearances, not verified UI text, actions, motion, or clip alignment.
 
-Eight [source-derived examples](frame-clip-queries.json) were labeled from visible media states before image/clip retrieval: three answerable and one filtered-out question in each split. Both clips and every screenshot come from the *same source videos* that Prism indexes. This tests near-duplicate retrieval and filtering; it does not estimate performance on independent screenshots or other products. The image cutoff is 0.65, selected on development. The result grouping changed after the first held-out run, so the final held-out figures below are **retrospective**, not an untouched estimate.
+Eight [source-derived examples](frame-clip-queries.json) were labeled from visible media states before image/clip retrieval: three answerable and one filtered-out question in each split. Both clips and every screenshot come from the *same source videos* that Prism indexes. This tests near-duplicate retrieval and filtering; it does not estimate performance on independent screenshots or other products. The provisional image cutoff was set to 0.65 before this evaluation and retained after the development run. The result grouping changed after the first held-out run, so the final held-out figures below are **retrospective**, not an untouched estimate.
 
 | Measure | Development | Held-out, retrospective |
 | --- | ---: | ---: |
 | Hit@5 on answerable queries | 3/3 | 3/3 |
-| Mean precision@5 | 0.45 | 0.60 |
+| Mean precision@5 | 0.53 | 0.53 |
 | False matches on filtered-out queries | 0/1 | 0/1 |
 | Mean start-time error, first same-video result | 2.43 s (3) | 6.97 s (3) |
 | Mean interval overlap, first same-video result | 0.279 (3) | 0.231 (3) |
-| Median warm API request time, four requests | 98.07 ms | 92.39 ms |
-| Median source-query media preparation time | 157.64 ms | 129.94 ms |
+| Median warm API request time, four requests | 105.70 ms | 104.04 ms |
+| Median source-query media preparation time | 192.52 ms | 604.80 ms |
 
 A hit requires a returned sampled-frame window (frame time ±2.5 seconds) to overlap the labeled visible-state interval in the correct video. Start-time error and overlap use the first result from the correct video even when its frame is outside that interval. For example, the held-out AJAX screenshot's first result was at 290.29 seconds, outside its 300–320 second label, although a later result hit. The two no-answer cases use a video filter that excludes the source; they do not test open-library abstention. Nearby frames within eight seconds are collapsed.
 
-On the local Apple M2/16 GB machine, the first development image request after restarting the updated API took **18.83 seconds** while it loaded the model. The final table uses a warmed process. The prepared query files ranged from **151,781 to 677,996 bytes**. A single `ps` observation after both final runs showed **483,600 KiB RSS** for the warmed API process; this includes Python, FastAPI, database client, and the model, so it is not the model's incremental memory cost. Media preparation timing is FFmpeg extraction or transcoding before upload; API request timing includes local multipart transfer, inference, and database search but excludes browser rendering. No paid model API calls were made; electricity and monetary compute cost were not measured.
+On the local Apple M2/16 GB machine, the first development image request after restarting the updated API took **20.31 seconds** while it loaded the model. The final table uses a warmed process. The prepared query files ranged from **151,781 to 677,996 bytes**. A single `ps` observation after both final runs showed **465,216 KiB RSS** for the warmed API process; this includes Python, FastAPI, database client, and the model, so it is not the model's incremental memory cost. Media preparation timing is FFmpeg extraction or transcoding before upload; API request timing includes local multipart transfer, inference, and database search but excludes browser rendering. No paid model API calls were made; electricity and monetary compute cost were not measured.
 
 To reproduce, start the API and worker from the [README](../README.md), ingest and visually index the [corpus](corpus.json), then run from the repository root with the same local media and `data/eval/video-map.json`:
 

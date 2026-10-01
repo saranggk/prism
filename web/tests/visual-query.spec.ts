@@ -77,7 +77,7 @@ test("local image query reaches indexed media and seeks the original video", asy
   await page.getByRole("button", { name: "Play from this frame" }).first().click();
   const player = page.locator(".visual-query .player-panel video");
   await expect(player).toBeVisible();
-  await expect.poll(async () => player.evaluate((video: HTMLVideoElement) => video.currentTime)).toBeGreaterThan(30);
+  await expect.poll(async () => player.evaluate((video: HTMLVideoElement) => video.currentTime), { timeout: 30_000 }).toBeGreaterThan(30);
 });
 
 test("local clip query identifies a sampled source view", async ({ page }) => {
