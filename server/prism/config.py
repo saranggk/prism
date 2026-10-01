@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     silent_visual_similarity_cutoff: float = (
         0.25  # Calibrated on silent-demo development questions.
     )
+    image_similarity_cutoff: float = 0.65  # Provisional; calibrate on image-query development data.
 
     @property
     def storage_path(self) -> Path:

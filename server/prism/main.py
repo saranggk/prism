@@ -14,6 +14,7 @@ from prism.playback import router as playback_router
 from prism.search import router as search_router
 from prism.uploads import UploadGuard, reconcile_uploads
 from prism.uploads import router as uploads_router
+from prism.visual_queries import router as visual_queries_router
 
 
 @asynccontextmanager
@@ -34,6 +35,7 @@ app.add_middleware(
 )
 app.include_router(uploads_router)
 app.include_router(search_router)
+app.include_router(visual_queries_router)
 app.include_router(playback_router)
 
 
