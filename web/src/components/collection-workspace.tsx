@@ -8,6 +8,7 @@ import {
   type Collection, type CollectionItem, type SearchResult, type Video,
 } from "@/lib/api";
 import { formatTime, VideoPlayer } from "@/components/video-player";
+import { EvidenceInspector } from "@/components/evidence-inspector";
 
 function editTime(seconds: number): string {
   const rounded = Math.round(seconds * 1000) / 1000;
@@ -23,7 +24,7 @@ function parseTime(value: string): number | null {
   return Number(match[1]) * 60 + Number(match[2]);
 }
 
-function ItemRow({ item, index, count, busy, onEdit, onMove, onRemove, onPlay }: {
+function ItemRow({ item, index, count, busy, onEdit, onMove, onRemove, onPlay, onInspect }: {
   item: CollectionItem;
   index: number;
   count: number;
@@ -32,6 +33,7 @@ function ItemRow({ item, index, count, busy, onEdit, onMove, onRemove, onPlay }:
   onMove: (index: number, direction: -1 | 1) => void;
   onRemove: (item: CollectionItem) => void;
   onPlay: (item: CollectionItem) => void;
+  onInspect: (item: CollectionItem) => void;
 }) {
   const [start, setStart] = useState(editTime(item.start_seconds));
   const [end, setEnd] = useState(editTime(item.end_seconds));
@@ -63,6 +65,7 @@ function ItemRow({ item, index, count, busy, onEdit, onMove, onRemove, onPlay }:
       <div><strong>{item.video_title}</strong><span>{formatTime(item.start_seconds)}–{formatTime(item.end_seconds)}</span></div>
       <div className="collection-actions">
         <button type="button" onClick={() => onPlay(item)}>Play source</button>
+        <button type="button" onClick={() => onInspect(item)}>Inspect evidence</button>
         <button type="button" disabled={busy || index === 0} onClick={() => onMove(index, -1)} aria-label={`Move ${item.video_title} earlier`}>↑</button>
         <button type="button" disabled={busy || index === count - 1} onClick={() => onMove(index, 1)} aria-label={`Move ${item.video_title} later`}>↓</button>
         <button type="button" disabled={busy} onClick={() => onRemove(item)}>Remove</button>
@@ -92,6 +95,7 @@ export function CollectionWorkspace({ videos, pendingMoment, onPendingSaved }: {
   const [end, setEnd] = useState("");
   const [note, setNote] = useState("");
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [inspectedId, setInspectedId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -99,6 +103,7 @@ export function CollectionWorkspace({ videos, pendingMoment, onPendingSaved }: {
   const sectionRef = useRef<HTMLElement>(null);
   const selected = collections.find((collection) => collection.id === selectedId) ?? null;
   const active = selected?.items.find((item) => item.id === activeId) ?? null;
+  const inspected = selected?.items.find((item) => item.id === inspectedId) ?? null;
 
   useEffect(() => {
     void listCollections().then((data) => {
@@ -189,6 +194,7 @@ export function CollectionWorkspace({ videos, pendingMoment, onPendingSaved }: {
       setSelectedId(remaining[0]?.id ?? "");
       setRename(remaining[0]?.title ?? "");
       setActiveId(null);
+      setInspectedId(null);
       setNotice("Collection deleted.");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Could not delete the collection.");
@@ -213,7 +219,7 @@ export function CollectionWorkspace({ videos, pendingMoment, onPendingSaved }: {
       {collections.length === 0 ? <p className="collection-placeholder">Create a collection to save moments from search or add a range by hand.</p> : <>
         <div className="collection-toolbar">
           <label htmlFor="collection-select">Collection</label>
-          <select id="collection-select" value={selectedId} onChange={(event) => { setSelectedId(event.target.value); setRename(collections.find((item) => item.id === event.target.value)?.title ?? ""); setActiveId(null); }}>
+          <select id="collection-select" value={selectedId} onChange={(event) => { setSelectedId(event.target.value); setRename(collections.find((item) => item.id === event.target.value)?.title ?? ""); setActiveId(null); setInspectedId(null); }}>
             {collections.map((collection) => <option key={collection.id} value={collection.id}>{collection.title}</option>)}
           </select>
           <form onSubmit={(event) => { event.preventDefault(); if (selected) void change(() => renameCollection(selected.id, rename), "Collection renamed."); }}>
@@ -236,8 +242,9 @@ export function CollectionWorkspace({ videos, pendingMoment, onPendingSaved }: {
         </form>
         {selected?.items.length ? <ol className="collection-items">{selected.items.map((item, index) => <ItemRow key={item.id} item={item} index={index} count={selected.items.length} busy={busy}
           onEdit={async (target, first, last, text) => { await change(() => editCollectionItem(selected.id, target.id, { start_seconds: first, end_seconds: last, note: text }), "Moment updated."); }}
-          onMove={move} onRemove={(target) => { void change(() => removeCollectionItem(selected.id, target.id), "Moment removed."); }} onPlay={(target) => setActiveId(target.id)} />)}</ol> : <p className="collection-placeholder">This collection has no moments yet.</p>}
+          onMove={move} onRemove={(target) => { void change(() => removeCollectionItem(selected.id, target.id), "Moment removed."); }} onPlay={(target) => setActiveId(target.id)} onInspect={(target) => setInspectedId(target.id)} />)}</ol> : <p className="collection-placeholder">This collection has no moments yet.</p>}
         {active && <VideoPlayer key={`${active.id}:${active.start_seconds}`} result={active} />}
+        {inspected && <EvidenceInspector key={`${inspected.id}:${inspected.start_seconds}:${inspected.end_seconds}`} target={inspected} onClose={() => setInspectedId(null)} />}
       </>}
     </>}
     {error && <p className="inline-error" role="alert">{error}</p>}

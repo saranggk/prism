@@ -73,3 +73,33 @@ export type Collection = {
   updated_at: string;
   items: Array<CollectionItem>;
 };
+
+export type EvidenceSegment = {
+  ordinal: number;
+  start_seconds: number;
+  end_seconds: number;
+  text: string;
+  source: "captions" | "whisper";
+};
+
+export type EvidenceFrame = {
+  ordinal: number;
+  time_seconds: number;
+  url: string;
+  media_available: boolean;
+};
+
+export type EvidenceWindow = {
+  video_id: string;
+  video_title: string;
+  duration_seconds: number;
+  selected_time_seconds: number;
+  window_start_seconds: number;
+  window_end_seconds: number;
+  transcript_state: "present" | "none" | null;
+  visual_state: "pending" | "indexing" | "ready" | "failed" | null;
+  media_available: boolean;
+  playback_url: string;
+  segments: Array<EvidenceSegment>;
+  frames: Array<EvidenceFrame>;
+};

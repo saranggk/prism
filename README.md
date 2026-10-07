@@ -4,7 +4,7 @@ Find the moment you need in a video library.
 
 Prism is a local-first video research project. Upload a short tutorial or product demo, prepare timestamped transcripts and representative frames, then search and play a matching moment.
 
-**Status:** the local upload → process → combined search → timestamp playback slice works. Image and short clip queries can find visually similar sampled frames in ready videos. You can save, edit, and order timestamp ranges in manual collections. Matches are provisional; evidence inspection and the research agent are not built yet. [Real-media evaluation](eval/RESULTS.md) reports measured successes and misses.
+**Status:** the local upload → process → combined search → timestamp playback slice works. Image and short clip queries can find visually similar sampled frames in ready videos. You can save, edit, and order timestamp ranges in manual collections, then inspect nearby source transcript segments and sampled frames. Matches remain provisional; the research agent is not built yet. [Real-media evaluation](eval/RESULTS.md) reports measured successes and misses.
 
 ## Stack
 
@@ -63,9 +63,9 @@ Run `uv run ruff check .` from `server/`, and `npm run lint`, `npm run typecheck
 
 ## Scope
 
-The current local slice supports short English MP4 tutorials and demos, text and image/clip queries across a library or selected videos, title matches, timestamped playback, and manually assembled collections of editable video ranges. Library frames are sampled about every five seconds, so brief visual actions can be missed. A visually similar frame does not verify UI text, an action, or the order of events in a clip. A nearby preview provides context unless the result explicitly labels it as a frame match.
+The current local slice supports short English MP4 tutorials and demos, text and image/clip queries across a library or selected videos, title matches, timestamped playback, manually assembled collections of editable video ranges, and on-demand inspection of original transcript segments and registered frames near a chosen time. Library frames are sampled about every five seconds, so brief visual actions can be missed. A visually similar frame does not verify UI text, an action, or the order of events in a clip. A nearby preview provides context unless the result explicitly labels it as a frame match.
 
-Later milestones add evidence inspection and an agent that assembles sourced collections. A hosted demo follows a working local version.
+Later milestones add an agent that assembles sourced collections. A hosted demo follows a working local version.
 
 ## Evaluation
 

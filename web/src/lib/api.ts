@@ -1,6 +1,6 @@
-import type { Collection, SearchResponse, Video } from "@/lib/api-types";
+import type { Collection, EvidenceWindow, SearchResponse, Video } from "@/lib/api-types";
 
-export type { Collection, CollectionItem, SearchResult, SearchResponse, Video, VideoResult, VisualQueryResult, VisualQueryResponse } from "@/lib/api-types";
+export type { Collection, CollectionItem, EvidenceWindow, SearchResult, SearchResponse, Video, VideoResult, VisualQueryResult, VisualQueryResponse } from "@/lib/api-types";
 
 const origin = process.env.NEXT_PUBLIC_API_ORIGIN ?? "http://127.0.0.1:8000";
 
@@ -24,6 +24,11 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export function listVideos(): Promise<Video[]> {
   return request<Video[]>("/videos");
+}
+
+export function inspectEvidence(videoId: string, timeSeconds: number, signal?: AbortSignal): Promise<EvidenceWindow> {
+  const params = new URLSearchParams({ time_seconds: String(timeSeconds) });
+  return request<EvidenceWindow>(`/videos/${encodeURIComponent(videoId)}/evidence?${params}`, { signal });
 }
 
 const writeHeaders = { "Content-Type": "application/json", "X-Prism-Request": "1" };

@@ -11,6 +11,7 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 from prism.collections import router as collections_router
 from prism.config import get_settings
 from prism.db import engine
+from prism.evidence import router as evidence_router
 from prism.playback import router as playback_router
 from prism.search import router as search_router
 from prism.uploads import UploadGuard, reconcile_uploads
@@ -39,6 +40,7 @@ app.include_router(search_router)
 app.include_router(visual_queries_router)
 app.include_router(playback_router)
 app.include_router(collections_router)
+app.include_router(evidence_router)
 
 
 class Health(BaseModel):

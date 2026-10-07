@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { mediaUrl, searchVideos, type SearchMode, type SearchResponse, type SearchResult, type Video, type VideoResult } from "@/lib/api";
 import { formatTime, VideoPlayer } from "@/components/video-player";
+import { EvidenceInspector, type EvidenceTarget } from "@/components/evidence-inspector";
 import { VisualQueryPanel } from "@/components/visual-query-panel";
 
 export function SearchResults({ videos, onSaveMoment }: { videos: Video[]; onSaveMoment: (result: SearchResult) => void }) {
@@ -14,6 +15,7 @@ export function SearchResults({ videos, onSaveMoment }: { videos: Video[]; onSav
   const [mode, setMode] = useState<SearchMode>("combined");
   const [response, setResponse] = useState<SearchResponse | null>(null);
   const [active, setActive] = useState<SearchResult | VideoResult | null>(null);
+  const [inspected, setInspected] = useState<EvidenceTarget | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const requestId = useRef(0);
@@ -26,6 +28,7 @@ export function SearchResults({ videos, onSaveMoment }: { videos: Video[]; onSav
     requestId.current += 1;
     controller.current?.abort();
     setLoading(false);
+    setInspected(null);
   }
 
   function execute(text: string, ids: string[], source: SearchMode = mode) {
@@ -146,6 +149,12 @@ export function SearchResults({ videos, onSaveMoment }: { videos: Video[]; onSav
                   {!result.evidence.includes("frame") && result.preview_url && result.preview_time_seconds !== null &&
                     <p className="evidence-detail">Context frame at {formatTime(result.preview_time_seconds)}</p>}
                   <button type="button" onClick={() => setActive(result)}>{chosen ? "Playing this moment" : "Play this moment"} <span aria-hidden="true">→</span></button>
+                  <button type="button" onClick={() => setInspected({
+                    video_id: result.video_id, video_title: result.video_title,
+                    start_seconds: result.start_seconds, end_seconds: result.end_seconds,
+                    match_frame_time: result.evidence.includes("frame") ? result.preview_time_seconds : null,
+                    match_transcript: result.evidence.includes("transcript"),
+                  })}>Inspect evidence</button>
                   <button type="button" onClick={() => onSaveMoment(result)}>Save to collection</button>
                 </div>
               </article>;
@@ -165,6 +174,7 @@ export function SearchResults({ videos, onSaveMoment }: { videos: Video[]; onSav
         </>}
       </div>
       {active && <VideoPlayer key={`${active.video_id}:${"start_seconds" in active ? active.start_seconds : "title"}`} result={active} />}
+      {inspected && <EvidenceInspector key={`${inspected.video_id}:${inspected.start_seconds}:${inspected.end_seconds}`} target={inspected} onClose={() => setInspected(null)} />}
     </section>
   );
 }

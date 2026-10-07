@@ -14,6 +14,9 @@ NAMES = (
     "VisualQueryResponse",
     "CollectionItem",
     "Collection",
+    "EvidenceSegment",
+    "EvidenceFrame",
+    "EvidenceWindow",
 )
 
 

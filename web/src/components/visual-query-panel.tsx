@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { mediaUrl, searchVisual, type SearchResult, type Video, type VisualQueryResponse, type VisualQueryResult } from "@/lib/api";
 import { formatTime, VideoPlayer } from "@/components/video-player";
+import { EvidenceInspector, type EvidenceTarget } from "@/components/evidence-inspector";
 
 const MAX_BYTES = 60 * 1024 * 1024;
 
@@ -13,6 +14,7 @@ export function VisualQueryPanel({ videos, selectedIds, onSaveMoment }: { videos
   const [preview, setPreview] = useState("");
   const [response, setResponse] = useState<VisualQueryResponse | null>(null);
   const [active, setActive] = useState<VisualQueryResult | null>(null);
+  const [inspected, setInspected] = useState<EvidenceTarget | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const controller = useRef<AbortController | null>(null);
@@ -30,6 +32,7 @@ export function VisualQueryPanel({ videos, selectedIds, onSaveMoment }: { videos
     controller.current?.abort();
     setResponse(null);
     setActive(null);
+    setInspected(null);
     setError("");
     setLoading(false);
     setFile(null);
@@ -58,6 +61,7 @@ export function VisualQueryPanel({ videos, selectedIds, onSaveMoment }: { videos
     setError("");
     setResponse(null);
     setActive(null);
+    setInspected(null);
     try {
       const data = await searchVisual(file, selectedIds, next.signal);
       if (!next.signal.aborted) setResponse(data);
@@ -73,15 +77,29 @@ export function VisualQueryPanel({ videos, selectedIds, onSaveMoment }: { videos
     if (clipRef.current) clipRef.current.currentTime = result.query_time_seconds;
   }
 
-  function save(result: VisualQueryResult) {
+  function frameRange(result: VisualQueryResult) {
     const duration = videos.find((video) => video.id === result.video_id)?.duration_seconds ?? result.frame_time_seconds + 2.5;
-    onSaveMoment({
-      video_id: result.video_id, video_title: result.video_title,
+    return {
       start_seconds: Math.max(0, result.frame_time_seconds - 2.5),
       end_seconds: Math.min(duration, result.frame_time_seconds + 2.5),
+    };
+  }
+
+  function save(result: VisualQueryResult) {
+    onSaveMoment({
+      video_id: result.video_id, video_title: result.video_title,
+      ...frameRange(result),
       excerpt: null, evidence: ["frame"],
       preview_time_seconds: result.frame_time_seconds, preview_url: result.frame_url,
       playback_url: result.playback_url,
+    });
+  }
+
+  function inspect(result: VisualQueryResult) {
+    setInspected({
+      video_id: result.video_id, video_title: result.video_title,
+      ...frameRange(result),
+      match_frame_time: result.frame_time_seconds,
     });
   }
 
@@ -118,10 +136,12 @@ export function VisualQueryPanel({ videos, selectedIds, onSaveMoment }: { videos
             <p className="evidence-label">Similar sampled frame at {formatTime(result.frame_time_seconds)}</p>
             {isClip && <p className="evidence-detail">Matched query sample near {formatTime(result.query_time_seconds)}. Clip order and motion were not compared.</p>}
             <button type="button" onClick={() => play(result)}>Play from this frame <span aria-hidden="true">→</span></button>
+            <button type="button" onClick={() => inspect(result)}>Inspect evidence</button>
             <button type="button" onClick={() => save(result)}>Save to collection</button>
           </div></article>)}</div>
       </>}
     </div>
     {active && <VideoPlayer key={`${active.video_id}:${active.frame_time_seconds}`} result={active} />}
+    {inspected && <EvidenceInspector key={`${inspected.video_id}:${inspected.match_frame_time}`} target={inspected} onClose={() => setInspected(null)} />}
   </div>;
 }

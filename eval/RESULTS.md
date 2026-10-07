@@ -2,7 +2,8 @@
 
 The first section preserves the local, real-model **transcript-only** baseline
 from Prism's first vertical slice. Later sections measure combined retrieval
-and image/clip queries. Collections and the research agent remain future work.
+and image/clip queries. Manual collections and evidence inspection are available
+but have not been measured here; the research agent remains future work.
 Raw run output stays in ignored `data/eval/`.
 
 ## Corpus and method
