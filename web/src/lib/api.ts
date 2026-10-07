@@ -1,6 +1,6 @@
-import type { SearchResponse, Video } from "@/lib/api-types";
+import type { Collection, SearchResponse, Video } from "@/lib/api-types";
 
-export type { SearchResult, SearchResponse, Video, VideoResult, VisualQueryResult, VisualQueryResponse } from "@/lib/api-types";
+export type { Collection, CollectionItem, SearchResult, SearchResponse, Video, VideoResult, VisualQueryResult, VisualQueryResponse } from "@/lib/api-types";
 
 const origin = process.env.NEXT_PUBLIC_API_ORIGIN ?? "http://127.0.0.1:8000";
 
@@ -24,6 +24,46 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export function listVideos(): Promise<Video[]> {
   return request<Video[]>("/videos");
+}
+
+const writeHeaders = { "Content-Type": "application/json", "X-Prism-Request": "1" };
+
+export function listCollections(): Promise<Collection[]> {
+  return request<Collection[]>("/collections");
+}
+
+export function createCollection(title: string): Promise<Collection> {
+  return request<Collection>("/collections", { method: "POST", headers: writeHeaders, body: JSON.stringify({ title }) });
+}
+
+export function renameCollection(id: string, title: string): Promise<Collection> {
+  return request<Collection>(`/collections/${encodeURIComponent(id)}`, { method: "PATCH", headers: writeHeaders, body: JSON.stringify({ title }) });
+}
+
+export async function deleteCollection(id: string): Promise<void> {
+  const response = await fetch(`${origin}/collections/${encodeURIComponent(id)}`, { method: "DELETE", headers: { "X-Prism-Request": "1" } });
+  if (!response.ok) {
+    const body: unknown = await response.json();
+    throw new Error(message(body, `Could not delete collection (${response.status}).`));
+  }
+}
+
+export type RangeDraft = { video_id: string; start_seconds: number; end_seconds: number; note: string };
+
+export function addCollectionItem(id: string, range: RangeDraft): Promise<Collection> {
+  return request<Collection>(`/collections/${encodeURIComponent(id)}/items`, { method: "POST", headers: writeHeaders, body: JSON.stringify(range) });
+}
+
+export function editCollectionItem(id: string, itemId: string, range: Omit<RangeDraft, "video_id">): Promise<Collection> {
+  return request<Collection>(`/collections/${encodeURIComponent(id)}/items/${encodeURIComponent(itemId)}`, { method: "PATCH", headers: writeHeaders, body: JSON.stringify(range) });
+}
+
+export function reorderCollectionItems(id: string, itemIds: string[]): Promise<Collection> {
+  return request<Collection>(`/collections/${encodeURIComponent(id)}/items/order`, { method: "PUT", headers: writeHeaders, body: JSON.stringify({ item_ids: itemIds }) });
+}
+
+export function removeCollectionItem(id: string, itemId: string): Promise<Collection> {
+  return request<Collection>(`/collections/${encodeURIComponent(id)}/items/${encodeURIComponent(itemId)}`, { method: "DELETE", headers: { "X-Prism-Request": "1" } });
 }
 
 export type SearchMode = "combined" | "transcript" | "visual";

@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { listVideos, retryVideo, retryVisual, uploadVideo, type Video } from "@/lib/api";
+import { listVideos, retryVideo, retryVisual, uploadVideo, type SearchResult, type Video } from "@/lib/api";
 import { SearchResults } from "@/components/search-results";
+import { CollectionWorkspace } from "@/components/collection-workspace";
 import { formatTime } from "@/components/video-player";
 
 const MAX_BYTES = 500 * 1024 * 1024;
@@ -24,6 +25,7 @@ export function VideoLibrary() {
   const [uploading, setUploading] = useState(false);
   const [transfer, setTransfer] = useState<number | null>(null);
   const [retrying, setRetrying] = useState<string | null>(null);
+  const [pendingMoment, setPendingMoment] = useState<SearchResult | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const cancelRef = useRef<(() => void) | null>(null);
 
@@ -152,7 +154,8 @@ export function VideoLibrary() {
       </div>
       {listError && videos.length > 0 && <p className="inline-error" role="alert">{listError} <button type="button" onClick={() => { void refresh(); }}>Try again</button></p>}
     </section>
-    <SearchResults videos={videos} />
+    <SearchResults videos={videos} onSaveMoment={(result) => setPendingMoment({ ...result })} />
+    <CollectionWorkspace videos={videos.filter((video) => video.status === "ready")} pendingMoment={pendingMoment} onPendingSaved={() => setPendingMoment(null)} />
     </>
   );
 }

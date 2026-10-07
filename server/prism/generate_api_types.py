@@ -12,6 +12,8 @@ NAMES = (
     "SearchResponse",
     "VisualQueryResult",
     "VisualQueryResponse",
+    "CollectionItem",
+    "Collection",
 )
 
 

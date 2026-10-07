@@ -54,3 +54,22 @@ export type VisualQueryResponse = {
   results: Array<VisualQueryResult>;
   skipped_videos: Array<string>;
 };
+
+export type CollectionItem = {
+  id: string;
+  video_id: string;
+  video_title: string;
+  start_seconds: number;
+  end_seconds: number;
+  note: string;
+  position: number;
+  playback_url: string;
+};
+
+export type Collection = {
+  id: string;
+  title: string;
+  created_at: string;
+  updated_at: string;
+  items: Array<CollectionItem>;
+};

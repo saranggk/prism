@@ -7,7 +7,7 @@ import { mediaUrl, searchVideos, type SearchMode, type SearchResponse, type Sear
 import { formatTime, VideoPlayer } from "@/components/video-player";
 import { VisualQueryPanel } from "@/components/visual-query-panel";
 
-export function SearchResults({ videos }: { videos: Video[] }) {
+export function SearchResults({ videos, onSaveMoment }: { videos: Video[]; onSaveMoment: (result: SearchResult) => void }) {
   const [query, setQuery] = useState("");
   const [submitted, setSubmitted] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -89,7 +89,7 @@ export function SearchResults({ videos }: { videos: Video[] }) {
           }} />
         <button type="submit" disabled={loading || searchable.length === 0}>Search <span aria-hidden="true">↗</span></button>
       </form>
-      <VisualQueryPanel key={selectedIds.join(":")} videos={searchable} selectedIds={selectedIds} />
+      <VisualQueryPanel key={selectedIds.join(":")} videos={searchable} selectedIds={selectedIds} onSaveMoment={onSaveMoment} />
       <fieldset className="source-filters">
         <legend>Evidence to search</legend>
         {([["combined", "All evidence"], ["transcript", "Transcript"], ["visual", "Frames"]] as const).map(([value, label]) =>
@@ -146,6 +146,7 @@ export function SearchResults({ videos }: { videos: Video[] }) {
                   {!result.evidence.includes("frame") && result.preview_url && result.preview_time_seconds !== null &&
                     <p className="evidence-detail">Context frame at {formatTime(result.preview_time_seconds)}</p>}
                   <button type="button" onClick={() => setActive(result)}>{chosen ? "Playing this moment" : "Play this moment"} <span aria-hidden="true">→</span></button>
+                  <button type="button" onClick={() => onSaveMoment(result)}>Save to collection</button>
                 </div>
               </article>;
             })}

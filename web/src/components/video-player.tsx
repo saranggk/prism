@@ -2,28 +2,28 @@
 
 import { useRef, useState } from "react";
 
-import { mediaUrl, type SearchResult, type VideoResult, type VisualQueryResult } from "@/lib/api";
+import { mediaUrl, type CollectionItem, type SearchResult, type VideoResult, type VisualQueryResult } from "@/lib/api";
 
 export function formatTime(seconds: number): string {
   const whole = Math.floor(Math.max(0, seconds));
   return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, "0")}`;
 }
 
-export function VideoPlayer({ result }: { result: SearchResult | VideoResult | VisualQueryResult }) {
+export function VideoPlayer({ result }: { result: SearchResult | VideoResult | VisualQueryResult | CollectionItem }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [playBlocked, setPlayBlocked] = useState(false);
   const [mediaError, setMediaError] = useState(false);
   const visual = "frame_time_seconds" in result ? result : null;
   const moment = "start_seconds" in result ? result : null;
-  const frameOnly = moment?.evidence.includes("frame") && !moment.evidence.includes("transcript");
+  const frameOnly = moment && "evidence" in moment && moment.evidence.includes("frame") && !moment.evidence.includes("transcript");
   let matchTime = 0;
   let label = "Video title";
   if (visual) {
     matchTime = visual.frame_time_seconds;
     label = "Visual match";
   } else if (moment) {
-    matchTime = frameOnly ? moment.preview_time_seconds ?? moment.start_seconds : moment.start_seconds;
-    label = frameOnly ? "Frame" : "Moment";
+    matchTime = frameOnly && "preview_time_seconds" in moment ? moment.preview_time_seconds ?? moment.start_seconds : moment.start_seconds;
+    label = "id" in moment ? "Saved range" : frameOnly ? "Frame" : "Moment";
   }
   const seekTo = Math.max(0, matchTime - (visual ? 0 : 3));
 

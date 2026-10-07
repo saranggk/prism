@@ -3,12 +3,12 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { mediaUrl, searchVisual, type Video, type VisualQueryResponse, type VisualQueryResult } from "@/lib/api";
+import { mediaUrl, searchVisual, type SearchResult, type Video, type VisualQueryResponse, type VisualQueryResult } from "@/lib/api";
 import { formatTime, VideoPlayer } from "@/components/video-player";
 
 const MAX_BYTES = 60 * 1024 * 1024;
 
-export function VisualQueryPanel({ videos, selectedIds }: { videos: Video[]; selectedIds: string[] }) {
+export function VisualQueryPanel({ videos, selectedIds, onSaveMoment }: { videos: Video[]; selectedIds: string[]; onSaveMoment: (result: SearchResult) => void }) {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState("");
   const [response, setResponse] = useState<VisualQueryResponse | null>(null);
@@ -73,6 +73,18 @@ export function VisualQueryPanel({ videos, selectedIds }: { videos: Video[]; sel
     if (clipRef.current) clipRef.current.currentTime = result.query_time_seconds;
   }
 
+  function save(result: VisualQueryResult) {
+    const duration = videos.find((video) => video.id === result.video_id)?.duration_seconds ?? result.frame_time_seconds + 2.5;
+    onSaveMoment({
+      video_id: result.video_id, video_title: result.video_title,
+      start_seconds: Math.max(0, result.frame_time_seconds - 2.5),
+      end_seconds: Math.min(duration, result.frame_time_seconds + 2.5),
+      excerpt: null, evidence: ["frame"],
+      preview_time_seconds: result.frame_time_seconds, preview_url: result.frame_url,
+      playback_url: result.playback_url,
+    });
+  }
+
   const isClip = file?.name.toLowerCase().endsWith(".mp4");
   return <div className="visual-query">
     <div className="visual-query-heading">
@@ -106,6 +118,7 @@ export function VisualQueryPanel({ videos, selectedIds }: { videos: Video[]; sel
             <p className="evidence-label">Similar sampled frame at {formatTime(result.frame_time_seconds)}</p>
             {isClip && <p className="evidence-detail">Matched query sample near {formatTime(result.query_time_seconds)}. Clip order and motion were not compared.</p>}
             <button type="button" onClick={() => play(result)}>Play from this frame <span aria-hidden="true">→</span></button>
+            <button type="button" onClick={() => save(result)}>Save to collection</button>
           </div></article>)}</div>
       </>}
     </div>

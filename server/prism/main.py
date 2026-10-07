@@ -8,6 +8,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
+from prism.collections import router as collections_router
 from prism.config import get_settings
 from prism.db import engine
 from prism.playback import router as playback_router
@@ -30,13 +31,14 @@ app.add_middleware(UploadGuard)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[get_settings().frontend_origin],
-    allow_methods=["GET", "POST"],
+    allow_methods=["GET", "POST", "PATCH", "PUT", "DELETE"],
     allow_headers=["Content-Type", "X-Prism-Request"],
 )
 app.include_router(uploads_router)
 app.include_router(search_router)
 app.include_router(visual_queries_router)
 app.include_router(playback_router)
+app.include_router(collections_router)
 
 
 class Health(BaseModel):
