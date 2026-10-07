@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "purpose": "Fixed source-labeled questions for the first research-agent comparison. No agent output was inspected while labeling.",
+  "label_method": "Transcript intervals were marked from the prepared CS50 source SRT files. The visual interval was marked from the Open Digital Mentor source-video contact sheet. Times are seconds in the prepared local videos. These videos and some nearby moments appeared in earlier retrieval evaluations, so this is a fresh question set, not a new corpus.",
+  "split_rule": "Use development cases for debugging; do not tune against held_out cases. Run held_out after the agent and scoring rules are fixed.",
+  "corpus_ids": ["sql_connection", "css", "ajax", "tcp", "open_digital_mentor"],
+  "queries": [
+    {
+      "id": "ad1", "split": "development",
+      "query": "Where does the CSS example turn the whole page background blue?",
+      "video_filter_ids": ["css"],
+      "relevant": [{"video_id": "css", "start_seconds": 73, "end_seconds": 96}],
+      "source": "data/eval/media/cs50-css.srt captions 26-32"
+    },
+    {
+      "id": "ad2", "split": "development",
+      "query": "Where is JSON mentioned as a common replacement for XML in AJAX?",
+      "video_filter_ids": ["ajax"],
+      "relevant": [{"video_id": "ajax", "start_seconds": 55, "end_seconds": 67}],
+      "source": "data/eval/media/cs50-ajax.srt captions 21-24"
+    },
+    {
+      "id": "ad3", "split": "development",
+      "query": "Where does TCP direct a packet to the right program on the receiving machine?",
+      "video_filter_ids": ["tcp"],
+      "relevant": [{"video_id": "tcp", "start_seconds": 53, "end_seconds": 67}],
+      "source": "data/eval/media/cs50-tcp.srt captions 17-21"
+    },
+    {
+      "id": "ad4", "split": "development",
+      "query": "Where do they install a Tailwind CSS package?",
+      "video_filter_ids": ["css"],
+      "relevant": [],
+      "source": "CSS source video has no Tailwind package installation"
+    },
+    {
+      "id": "ah1", "split": "held_out",
+      "query": "Where does the CSS table example show a border around the table but not its cells?",
+      "video_filter_ids": ["css"],
+      "relevant": [{"video_id": "css", "start_seconds": 576, "end_seconds": 587}],
+      "source": "data/eval/media/cs50-css.srt captions 200-204"
+    },
+    {
+      "id": "ah2", "split": "held_out",
+      "query": "Where does the AJAX lesson introduce the onreadystatechange behavior?",
+      "video_filter_ids": ["ajax"],
+      "relevant": [{"video_id": "ajax", "start_seconds": 180, "end_seconds": 198}],
+      "source": "data/eval/media/cs50-ajax.srt captions 63-66"
+    },
+    {
+      "id": "ah3", "split": "held_out",
+      "query": "Where is the blue send button visible beside the message box?",
+      "video_filter_ids": ["open_digital_mentor"],
+      "relevant": [{"video_id": "open_digital_mentor", "start_seconds": 0, "end_seconds": 8}],
+      "source": "data/eval/media/open-digital-mentor-prism.mp4 opening screen"
+    },
+    {
+      "id": "ah4", "split": "held_out",
+      "query": "Where does the demo export a CSV spreadsheet?",
+      "video_filter_ids": ["open_digital_mentor"],
+      "relevant": [],
+      "source": "Open Digital Mentor source video contains no spreadsheet export"
+    }
+  ]
+}
